@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Web Animations API</title>
+
+    
+  </head>
+
+  <body oncontextmenu="return false;" >
+    <div id="main">
+    </div>
+
+    <script>
+      const main = document.querySelector("#main")
+      const solve = [
+        "U", "U2", "U'",
+        "R", "R2", "R'",
+        "L", "L2", "L'",
+        "F", "F2", "F'",
+        "D", "D2", "D'",
+        // "B", "B2", "B'",
+        "x", "x2", "x'",
+        "y", "y2", "y'",
+        "z", "z2", "z'",
+        "(", ")"
+      ]
+      const len = solve.length
+      const anim = {
+        "key": [
+          {
+            "maxWidth": "0%",
+            "offset": 0
+          },
+          {
+            "maxWidth": "0%",
+            "offset": 0.07142857142857142
+          },
+          {
+            "maxWidth": "50%",
+            "offset": 0.14285714285714285
+          },
+          {
+            "maxWidth": "50%",
+            "offset": 0.21428571428571427
+          },
+          {
+            "maxWidth": "100%",
+            "offset": 0.2857142857142857
+          },
+          {
+            "maxWidth": "100%",
+            "offset": 1
+          }
+        ],
+        "move": {
+          "pseudoElement": "::before",
+          "iterations": 1,
+          "fill": "forwards",
+          "duration": 14000
+        }
+      }
+
+      const imgs = new Array(len*3)
+      const imgAnims = new Array(len*3)
+
+      async function wait(ms){
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(); // setTimeoutの第一引数の関数として簡略化できる
+          }, ms)
+        });
+      }
+
+      async function make(){
+        const _img = document.createElement("img")
+        // _img.classList.add("")
+
+        for(let i=0;i<len*2;i++){
+          const img = _img.cloneNode(true)
+          img.src = `./img/${solve[i%len]}.png`
+          main.appendChild(img)
+        }
+
+      }
+      async function make2(){
+        const _img = document.createElement("img")
+        // _img.classList.add("")
+
+
+        await wait(2000)
+        
+        console.log("start")
+        const time = Date.now()
+
+        for(let i=0;i<len*3;i++){
+          const img = _img.cloneNode(true)
+          img.src = `./img/${solve[i%len]}.png`
+          main.appendChild(img)
+          imgs[i] = img
+          imgs[i].animate(anim.key, anim.move)
+          .ready.then((et) => {
+            imgAnims[i] = et
+            et.pause()
+            et.currentTime=0
+          }).catch((error) => {
+             // console.log(error)
+          })
+        }
+
+        const time2 = Date.now()
+
+        console.log({time, time2, sub: time2-time})
+      }
+
+      make2()
+
+    </script>
+    
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+
+      #main{
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      img {
+        display: block;
+        width: 50px;
+        height: 50px;
+      }
+    </style>
+  </body >
+</html>
