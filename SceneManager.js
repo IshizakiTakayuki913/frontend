@@ -1,5 +1,12 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+
 
 export class SceneManager{
   lights = []
@@ -24,12 +31,10 @@ export class SceneManager{
     
     const canvas = canvasEl
     
-    const dpr = window.devicePixelRatio || 1
-    this.setHeight = canvas.clientHeight  * dpr
+    this.setHeight = canvas.clientHeight
 
-    canvas.width  = canvas.clientWidth  * dpr
-    canvas.height = canvas.clientHeight * dpr
-
+    canvas.width  = canvas.clientWidth
+    canvas.height = canvas.clientHeight
 
     const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 1000)
     camera.position.set(view.x, view.y, view.z)
@@ -38,16 +43,61 @@ export class SceneManager{
     const renderer = new THREE.WebGLRenderer({
       canvas: canvas,
       alpha: true,        // 背景を透明にする
-      antialias: true     // アンチエイリアスを有効にする
+      antialias: false     // アンチエイリアスを有効にする
     })
-    renderer.updateStyle = false
+    
+    renderer.toneMapping = THREE.NoToneMapping; 
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
     renderer.setSize(canvas.width ,canvas.height, false)
-    // renderer.shadowMap.enabled = true
+
+    
+    // レンダラーで設定している場合
+    renderer.setPixelRatio(window.devicePixelRatio); 
+
+    const composer = new EffectComposer(renderer)
+    
+
+    // EffectComposerにも適用する
+    composer.setPixelRatio(window.devicePixelRatio);
+
+    const renderPass = new RenderPass( scene, camera )
+    renderPass.clear = true; 
+    renderPass.clearDepth = true;
+    composer.addPass(renderPass)
+
+    
+    const outlinePass = new OutlinePass(new THREE.Vector2(2, 1), scene, camera)
+    outlinePass.edgeStrength=5
+    outlinePass.edgeGlow=0
+    outlinePass.edgeThickness=0.3
+    outlinePass.visibleEdgeColor = new THREE.Color(1,0,1)
+    outlinePass.hiddenEdgeColor = new THREE.Color(1,0,1)
+    outlinePass.selectedObjects = []
+
+    composer.addPass(outlinePass)
+    
+    
+    // ... 
+    // ★ FXAA Passを追加 ★
+    const effectFXAA = new ShaderPass(FXAAShader);
+    effectFXAA.uniforms['resolution'].value.set(
+        1 / window.innerWidth, 
+        1 / window.innerHeight
+    );
+    composer.addPass(effectFXAA);
+    // ...
+
+    composer.addPass(new OutputPass());
 
     this.scene = scene
     this.canvas = canvas
     this.camera = camera
     this.renderer = renderer
+
+    this.composer = composer
+    this.renderPass = renderPass
+    this.outlinePass = outlinePass
     
     this.mixers = mixers
 
@@ -62,26 +112,19 @@ export class SceneManager{
   animate(){
     requestAnimationFrame(this.animate)
 
-    // this.rad += delta
-
-    // this.camera.position.x = Math.cos(this.rad) * 5
-    // this.camera.position.z = Math.sin(this.rad) * 5
-    // this.camera.lookAt(this.scene.position)
-
     const delta = this.clock.getDelta()
 
     if (this.mixers) this.mixers.mixers.forEach(m => m.mixer.update(delta))
 
-    this.renderer.render(this.scene, this.camera)
+    this.composer.render(this.scene, this.camera)
   }
   onResize(e) {
     const canvas = this.canvas
     const camera = this.camera
     const renderer = this.renderer
 
-    const dpr = window.devicePixelRatio || 1
-    const width = canvas.clientWidth * dpr // またはcanvas.height
-    const height = canvas.clientHeight * dpr // またはcanvas.height
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
 
     canvas.width  = width
     canvas.height = height

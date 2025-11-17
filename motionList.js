@@ -31,8 +31,6 @@ export class motionList{
   rotImgs = null
   step_move = null
 
-  outLineModule = null
-
   step_move = null
   imgAnimData = null
   imgAnims = []
@@ -58,7 +56,7 @@ export class motionList{
       bar: document.querySelector(`.step-meter .meter-out .meter-in`)
     }
 
-    this.scene = document.querySelector("a-scene")
+    // this.scene = document.querySelector("a-scene")
 
     // this.meterBar = document.querySelector('.time-meter-animation')
 
@@ -718,7 +716,7 @@ export class motionList{
         [-0.7071067811865475,0,0,0.7071067811865476],
       ]
     }
-
+ 
     const posName = {
       "ce": "c",
       "co": "cp",
@@ -736,22 +734,12 @@ export class motionList{
       // const number = this.boneNumber[posName[type]]
       //   .indexOf(this.Datas.at(-1)[posName[type]][parseInt(e.slice(-2))])
 
-      // objes.push(bone[type][number])
+      objes.push(bone[type][number])
     })
 
     // console.log({index, F, objes})
-/* モジュール化
-    if(this.outLineModule == null){
-      // console.log(`components no`)
-      this.outLineModule = new outline({model: this.full_cube, objects: objes, scene: this.scene})
-    }
-    else{
-      // console.log(`components hit`)
-      // console.log(comp)
-      // console.log(comp.selectedObjects)
-      this.outLineModule.outlinePass.selectedObjects = objes
-    }
-*/
+
+    this.parent.SceneManager.outlinePass.selectedObjects = objes
   }
 
     async next_btn_func(){
@@ -940,19 +928,8 @@ export class motionList{
       this.step_time_meter.dispose()
       this.step_time_meter = null
 
-      // this.full_cube.object3D.traverse((e)=>{
-      //   if(e.type=="Group" && ( e.name=="fco" || e.name=="fce" || e.name=="fed")){
-      //     e.removeFromParent()
-      //   }
-      // })
-      
-/* モジュール化
-      if(this.outLineModule != null) {
-        this.outLineModule.remove()
-        this.outLineModule = null
-        //this.full_cube.removeAttribute("model-outline")
-      }
-*/
+      this.parent.SceneManager.outlinePass.selectedObjects = []
+
       
       this.stepRmoveAnim()
       

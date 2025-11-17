@@ -1,28 +1,38 @@
-class outline{
+import * as THREE from 'three'
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
+
+
+
+export class outline{
   LineRender = true
-  constructor(_data = {model: null, objects: null, scene: null}){
+  constructor(_data = {model: null, objects: null, scene: null, parent: null}){
     console.log(`outline init`)
     console.log(`Object len :${_data.objects.length}`)
     console.log(_data.objects)
 
-    const sceneEl = _data.scene
-    const renderer = sceneEl.renderer
-    const camera = sceneEl.camera
-    const scene = _data.scene.object3D
+    const parent = _data.parent
 
-    console.log({sceneEl, renderer, scene, camera})  
+    // const sceneEl = _data.scene
+    const renderer = parent.SceneManager.renderer
+    const camera = parent.SceneManager.camera
+    const scene = parent.SceneManager.scene
+
+    console.log({renderer, scene, camera})  
     
+    this.renderer = renderer
     this.camera = camera
     this.scene = scene
-    this.renderer = renderer
       
-    const composer = new myTHREE.EffectComposer(renderer)
-    
-    const renderPass = new myTHREE.RenderPass( scene, camera )
-    // renderPass.clear = true
+    const composer = new EffectComposer(renderer)
+    // composer.setRenderTarget(new THREE.WebGLRenderTarget(width, height, { type: THREE.HalfFloatType }));
+
+    const renderPass = new RenderPass( scene, camera )
+    // renderPass.clear = false
     composer.addPass(renderPass)
 
-    const outlinePass = new myTHREE.OutlinePass(new THREE.Vector2(2, 1), scene, camera)
+    const outlinePass = new OutlinePass(new THREE.Vector2(2, 1), scene, camera)
     outlinePass.edgeStrength=5
     outlinePass.edgeGlow=0
     outlinePass.edgeThickness=0.3
@@ -31,6 +41,7 @@ class outline{
     outlinePass.selectedObjects = _data.objects
 
     composer.addPass(outlinePass)
+    // composer.toneMapping = THREE.NoToneMapping
 
     this.composer = composer
     this.renderPass = renderPass
