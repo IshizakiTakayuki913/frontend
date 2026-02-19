@@ -12,8 +12,8 @@ import {colorinput} from './colorinput.js'
 import {motionList} from './motionList.js'
 
 import {
-  State, cubeState, set_color_data, color_set,
-  cube_Full_Animation_Make, cubesetData, cubeset, wait,
+  State, cubeState, color_set,
+  cubeset, wait,
   objectPrint, positionGet
 } from './solve.js'
 
@@ -207,9 +207,9 @@ class cubemode{
       }
     })
 
-    const cubeAnim = animeManager.create({scene: objMan.objects.cube})
-    const handLAnim = animeManager.create({scene: objMan.objects.handL})
-    const handRAnim = animeManager.create({scene: objMan.objects.handR})
+    const cubeAnim = animeManager.create({scene: objMan.objects.cube, name: "cube"})
+    const handLAnim = animeManager.create({scene: objMan.objects.handL, name: "L_hand"})
+    const handRAnim = animeManager.create({scene: objMan.objects.handR, name: "R_hand"})
 
     objMan.objects.handL.scale.set(56,56,56)
     objMan.objects.handR.scale.set(-56,56,56)
@@ -224,7 +224,13 @@ class cubemode{
 
     this.dispCube = new cubeState()
 
-    this.dispCube.cube.set({"cp":[4,0,2,3,1,5,6,7],"co":[2,0,1,1,2,1,1,1],"ep":[11,5,9,6,7,4,2,0,1,10,3,8],"eo":[0,0,0,0,0,0,0,0,0,0,0,0],"c":[0,1,2,3,4,5]})
+    this.dispCube.cube.set({
+      "cp":[4,0,2,3,1,5,6,7],
+      "co":[2,0,1,1,2,1,1,1],
+      "ep":[11,5,9,6,7,4,2,0,1,10,3,8],
+      "eo":[0,0,0,0,0,0,0,0,0,0,0,0],
+      "c":[0,1,2,3,4,5]
+    })
 
     // this.dispCube.cube.set(new State({
     //   cp:[4,5,0,7,3,1,6,2],
@@ -237,10 +243,28 @@ class cubemode{
     color_set(this.dispCube.color.c, objMan.objects.cube)
     cubeset(objMan.objects.cube, this.dispCube.cube)
 
-	  this.Viewpoint = new camera({scene: mainCanvas, camOut: scnMan.camera, parent: this})
-	  this.Colorset = new colorinput({scene: mainCanvas, camOut: scnMan.camera, disp: _main, parent: this})
-	  this.presskey = new presskeyboard({scene: mainCanvas, camOut: scnMan.camera, parent: this})
-	  this.Rotation = new cubemrotate({scene: mainCanvas, camOut: scnMan.camera, parent: this})
+	  this.Viewpoint = new camera({
+      scene: mainCanvas, camOut: scnMan.camera, parent: this,
+      ObjectManager: this.ObjectManager,
+      AnimeManager: this.AnimeManager,
+      SceneManager: this.SceneManager
+    })
+    
+	  this.Colorset = new colorinput({scene: mainCanvas, camOut: scnMan.camera, disp: _main, parent: this,
+      ObjectManager: this.ObjectManager,
+      AnimeManager: this.AnimeManager,
+      SceneManager: this.SceneManager
+    })
+	  this.presskey = new presskeyboard({scene: mainCanvas, camOut: scnMan.camera, parent: this,
+      ObjectManager: this.ObjectManager,
+      AnimeManager: this.AnimeManager,
+      SceneManager: this.SceneManager
+    })
+	  this.Rotation = new cubemrotate({scene: mainCanvas, camOut: scnMan.camera, parent: this,
+      ObjectManager: this.ObjectManager,
+      AnimeManager: this.AnimeManager,
+      SceneManager: this.SceneManager
+    })
     
     this.cubeHolding  = false 
 
@@ -395,7 +419,10 @@ class cubemode{
       full_cube: this.ObjectManager.objects.cube,
       L_hand: this.ObjectManager.objects.handL,
       R_hand: this.ObjectManager.objects.handR,
-      parent: this
+      parent: this,
+      ObjectManager: this.ObjectManager,
+      AnimeManager: this.AnimeManager,
+      SceneManager: this.SceneManager
     })
 
     this.saveCube = this.dispCube.clone()

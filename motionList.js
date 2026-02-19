@@ -1,8 +1,6 @@
 
 import {
-  State, cubeState, set_color_data, color_set,
-  cube_Full_Animation_Make, cubesetData, cubeset, wait,
-  objectPrint, positionGet
+  State, cubeset, wait
 } from './solve.js'
 
 import { meter } from './meter.js'
@@ -36,9 +34,14 @@ export class motionList{
   imgAnims = []
   // boneNumber = null
 
+  /**
+   * 
+   * @param {object} [] モデルデータ
+   */
   constructor({
     full_cube = null, 
-    L_hand = null, R_hand = null, frameObj = null, parent = null
+    L_hand = null, R_hand = null, frameObj = null, parent = null,
+    ObjectManager = null, AnimeManager = null, SceneManager = null
   } = {}  ){
     // console.log({model_centers, bone_centers})
 
@@ -47,6 +50,10 @@ export class motionList{
     this.R_hand = R_hand
     this.frameObj = frameObj
     this.parent = parent
+    
+    this.ObjectManager = ObjectManager
+    this.AnimeManager = AnimeManager
+    this.SceneManager = SceneManager
 
     this.mew_motion = true
     this.animation_start_time = undefined
@@ -55,8 +62,6 @@ export class motionList{
       area: document.querySelector(`.step-meter .meter-out`),
       bar: document.querySelector(`.step-meter .meter-out .meter-in`)
     }
-
-    // this.scene = document.querySelector("a-scene")
 
     // this.meterBar = document.querySelector('.time-meter-animation')
 
@@ -95,7 +100,7 @@ export class motionList{
     this.learning_btn.addEventListener("click", this.learning_btn_func)
     this.stepList.addEventListener("click", this.stepList_func)
 
-    this.parent.cubeAnim.mixer.addEventListener('finished', this.stepAnimationEnd)
+    this.AnimeManager.mixersName.cube.mixer.addEventListener('finished', this.stepAnimationEnd)
   }
   async ins(_Datas, _color_data, _Rotes, _RotPatterns, animData){
     this.setData = new State(_Datas)
@@ -417,10 +422,10 @@ export class motionList{
     // console.log(`point 1`)
 
     
-    // this.parent.cubeAnim.remove()
-    // cubeset(this.parent.ObjectManager.objects.cube, this.parent.dispCube.cube)
-    // this.parent.cubeAnim.set({animationData: anims, fps: 1, timeScale: rotaSpped})
-    // this.parent.cubeAnim.action.paused = false
+    // this.AnimeManager.mixersName.cube.remove()
+    // cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+    // this.AnimeManager.mixersName.cube.set({animationData: anims, fps: 1, timeScale: rotaSpped})
+    // this.AnimeManager.mixersName.cube.action.paused = false
 
     this.stepRmoveAnim()
     this.stepMakeAnim(this.stepStartTime[index]/1000, this.stepStartTime[index+1]/1000)
@@ -435,33 +440,33 @@ export class motionList{
     this.learning_btn.style.display = "block"
   }
   stepRmoveAnim(){
-		this.parent.cubeAnim.remove()
-		this.parent.handLAnim.remove()
-		this.parent.handRAnim.remove()
+		this.AnimeManager.mixersName.cube.remove()
+		this.AnimeManager.mixersName.L_hand.remove()
+		this.AnimeManager.mixersName.R_hand.remove()
   }
   stepMakeAnim(timeStart, timeEnd){
     const check = [
-      this.parent.cubeAnim.sliceSet({
+      this.AnimeManager.mixersName.cube.sliceSet({
         animationData: this.animations.cube,
         fps: 1,
         start: timeStart,
         end: timeEnd 
       }),
-      this.parent.handLAnim.sliceSet({
+      this.AnimeManager.mixersName.L_hand.sliceSet({
         animationData: this.animations.L_hand,
         start: timeStart,
         end: timeEnd 
       }),
-      this.parent.handRAnim.sliceSet({
+      this.AnimeManager.mixersName.R_hand.sliceSet({
         animationData: this.animations.R_hand,
         start: timeStart,
         end: timeEnd 
       })
     ]
 
-    this.parent.cubeAnim.showFrameAt()
-    this.parent.handLAnim.showFrameAt()
-    this.parent.handRAnim.showFrameAt()
+    this.AnimeManager.mixersName.cube.showFrameAt()
+    this.AnimeManager.mixersName.L_hand.showFrameAt()
+    this.AnimeManager.mixersName.R_hand.showFrameAt()
   }
   stepAnimationPointSet(index, point){
     // console.log({index, point})
@@ -613,19 +618,19 @@ export class motionList{
 
   }
   frame(time){
-    this.parent.cubeAnim.showFrameAt({time})
-    this.parent.handLAnim.showFrameAt({time})
-    this.parent.handRAnim.showFrameAt({time})
+    this.AnimeManager.mixersName.cube.showFrameAt({time})
+    this.AnimeManager.mixersName.L_hand.showFrameAt({time})
+    this.AnimeManager.mixersName.R_hand.showFrameAt({time})
   }
   animationStart(timeScale){
-    this.parent.cubeAnim.play({timeScale})
-    this.parent.handLAnim.play({timeScale})
-    this.parent.handRAnim.play({timeScale})
+    this.AnimeManager.mixersName.cube.play({timeScale})
+    this.AnimeManager.mixersName.L_hand.play({timeScale})
+    this.AnimeManager.mixersName.R_hand.play({timeScale})
   }
   remove_Animation(){
-    this.parent.cubeAnim.stop()
-    this.parent.handLAnim.stop()
-    this.parent.handRAnim.stop()
+    this.AnimeManager.mixersName.cube.stop()
+    this.AnimeManager.mixersName.L_hand.stop()
+    this.AnimeManager.mixersName.R_hand.stop()
   }
   meter(Data){
     
@@ -675,7 +680,7 @@ export class motionList{
     ]
 
     const F = f[index]
-    const _bone = this.parent.ObjectManager.objects.cube.children
+    const _bone = this.ObjectManager.objects.cube.children
     const bone = {
       "ce": _bone.slice(0, 6),
       "co": _bone.slice(6, 14),
@@ -739,221 +744,220 @@ export class motionList{
 
     // console.log({index, F, objes})
 
-    this.parent.SceneManager.outlinePass.selectedObjects = objes
+    this.SceneManager.outlinePass.selectedObjects = objes
   }
-
-    async next_btn_func(){
-      if(this.parent.cube_mode !== "Execution")	return
-      if(this.step_move)  return
-      
-      if(this.stepCount == 15)  return {skip: true, check: "over"}
+  async next_btn_func(){
+    if(this.parent.cube_mode !== "Execution")	return
+    if(this.step_move)  return
     
-      this.stepCount++
+    if(this.stepCount == 15)  return {skip: true, check: "over"}
+  
+    this.stepCount++
+    await this.stepChange(this.stepCount)
+  }
+  async back_btn_func(){
+    if(this.parent.cube_mode !== "Execution")	return
+    if(this.step_move)  return
+  
+    if(this.stepCount == 0)  return {skip: true, check: "over"}
+  
+    this.stepCount--
+    await this.stepChange(this.stepCount)
+  }
+  stop_btn_func(){
+    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.step_move) return
+  
+    clearTimeout(this.timeOutId)
+    clearTimeout(this.imgTimeOutId)
+  
+    const index = this.stepSkip[this.stepCount]
+    const durtime =  (Date.now() - this.animation_start_time)
+    const value = this.mode_direction * Math.max(durtime, 0) + this.stopTime
+  
+    this.stopTime = value
+  
+    this.mode_direction = undefined
+  
+    this.remove_Animation()
+    this.step_move = false
+  
+    this.stepAnimationPause(index)
+    this.stepAnimationPointSet(index,value)
+    this.step_time_meter.animationPause(value)
+  }
+  play_btn_func(){
+    
+    if(this.parent.cube_mode !== "Execution")	return
+    if(this.step_move) return
+  
+    const index = this.stepSkip[this.stepCount]
+    if(index == -1)  return {skip: true, }
+  
+    this.vec = `play`
+    this.mode_direction = this.parent.rote_speed
+  
+    if(this.stopTime >= this.stepStartTime[index+1] - this.stepStartTime[index]){
+      this.stopTime = 0
+      this.step_time_meter.Update_Value_From_Bar(this.stopTime)
+      this.frame(this.stopTime/1000)
+    }
+  
+    this.stepAnimationPointSet(index,this.stopTime)
+  
+    this.step_move = true
+  
+    // this.animation(
+    //   this.stopTime/1000,
+    //   this.stepStartTime[index+1]/1000, this.parent.rote_speed)
+    this.animationStart(this.mode_direction)
+
+    this.animation_start_time = Date.now()
+    this.stepAnimationStart(index, this.mode_direction)
+    this.step_time_meter.animationPlay(this.stopTime, this.mode_direction)
+  }
+  reverse_btn_func(){
+    
+    
+    if(this.parent.cube_mode !== "Execution")	return
+    if(this.step_move) return
+  
+    const index = this.stepSkip[this.stepCount]
+    if(index == -1) return {skip: true, }
+  
+    this.vec = `reverse`
+    this.mode_direction = -this.parent.rote_speed
+  
+    if(this.stopTime <= 0){
+      this.stopTime = this.stepStartTime[index+1] - this.stepStartTime[index]
+      this.step_time_meter.Update_Value_From_Bar(this.stopTime)
+      this.frame(this.stopTime/1000)
+    }
+  
+    this.stepAnimationPointSet(index, this.stopTime)
+  
+    this.step_move = true
+  
+    // this.animation(
+    //   this.stopTime/1000,
+    //   this.stepStartTime[index]/1000, this.parent.rote_speed)
+    this.animationStart(this.mode_direction)
+      
+    this.animation_start_time = Date.now()
+    this.stepAnimationStart(index, -this.parent.rote_speed)
+    this.step_time_meter.animationPlay(this.stopTime, -this.parent.rote_speed)
+  }
+  async learning_btn_func(){
+    
+    if(this.step_move) return
+    if(this.parent.cube_mode != "Execution" && this.parent.cube_mode != "learning") return
+  
+    const index = this.stepSkip[this.stepCount]
+  
+    if(this.parent.cube_mode == "Execution"){
+  
+      // this.full_cube.object3D.traverse((e)=>{
+      //   if(e.type=="Group" && ( e.name=="fco" || e.name=="fce" || e.name=="fed")){
+      //     e.removeFromParent()
+      //   }
+      // })
+      
+      this.ObjectManager.objects.handL.visible = false
+      this.ObjectManager.objects.handR.visible = false
+  
+      this.learning_btn.querySelector("p").textContent = '解説モードへ'
+
+      this.parent.dispCube.cube = this.Datas[this.groupRotesCube[index]]
+      // cubeset(full_cube.object3D, this.dispCube.cube)
+      cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+  
+      this.parent.Mode_set("learning")
+    }
+    else if(this.parent.cube_mode == "learning"){
+      this.parent.Mode_set("Execution")
+
+      this.ObjectManager.objects.handL.visible = true
+      this.ObjectManager.objects.handR.visible = true
+      
+      this.learning_btn.querySelector("p").textContent = '試行モードへ'
+  
       await this.stepChange(this.stepCount)
     }
-    async back_btn_func(){
-      if(this.parent.cube_mode !== "Execution")	return
-      if(this.step_move)  return
+  }
+  async stepList_func(e){
     
-      if(this.stepCount == 0)  return {skip: true, check: "over"}
-    
-      this.stepCount--
-      await this.stepChange(this.stepCount)
+    if(this.parent.cube_mode !== "Execution")	return
+    if(this.step_move) return
+  
+    let newStep = -1
+    if(this.step_move){
+      // console.log(`動作中`)
+      return
     }
-    stop_btn_func(){
-      if(this.parent.cube_mode !== "Execution")	return
-      if(!this.step_move) return
-    
-      clearTimeout(this.timeOutId)
-      clearTimeout(this.imgTimeOutId)
-    
-      const index = this.stepSkip[this.stepCount]
-      const durtime =  (Date.now() - this.animation_start_time)
-      const value = this.mode_direction * Math.max(durtime, 0) + this.stopTime
-    
-      this.stopTime = value
-    
-      this.mode_direction = undefined
-    
-      this.remove_Animation()
-      this.step_move = false
-    
-      this.stepAnimationPause(index)
-      this.stepAnimationPointSet(index,value)
-      this.step_time_meter.animationPause(value)
+  
+    if(e.target.classList.contains("step-thiss")){
+      // console.log(`枠 return`)
+      return
     }
-    play_btn_func(){
-      
-      if(this.parent.cube_mode !== "Execution")	return
-      if(this.step_move) return
     
-      const index = this.stepSkip[this.stepCount]
-      if(index == -1)  return {skip: true, }
-    
-      this.vec = `play`
-      this.mode_direction = this.parent.rote_speed
-    
-      if(this.stopTime >= this.stepStartTime[index+1] - this.stepStartTime[index]){
-        this.stopTime = 0
-        this.step_time_meter.Update_Value_From_Bar(this.stopTime)
-        this.frame(this.stopTime/1000)
-      }
-    
-      this.stepAnimationPointSet(index,this.stopTime)
-    
-      this.step_move = true
-    
-      // this.animation(
-      //   this.stopTime/1000,
-      //   this.stepStartTime[index+1]/1000, this.parent.rote_speed)
-      this.animationStart(this.mode_direction)
-
-      this.animation_start_time = Date.now()
-      this.stepAnimationStart(index, this.mode_direction)
-      this.step_time_meter.animationPlay(this.stopTime, this.mode_direction)
+    if(e.target.classList.contains("step-mode")){
+      // console.log(`step return`)
+      if(parseInt(e.target.classList[1].slice(4)) == this.stepCount) return
+      newStep = e.target.classList[1].slice(4)
     }
-    reverse_btn_func(){
-      
-      
-      if(this.parent.cube_mode !== "Execution")	return
-      if(this.step_move) return
-    
-      const index = this.stepSkip[this.stepCount]
-      if(index == -1) return {skip: true, }
-    
-      this.vec = `reverse`
-      this.mode_direction = -this.parent.rote_speed
-    
-      if(this.stopTime <= 0){
-        this.stopTime = this.stepStartTime[index+1] - this.stepStartTime[index]
-        this.step_time_meter.Update_Value_From_Bar(this.stopTime)
-        this.frame(this.stopTime/1000)
-      }
-    
-      this.stepAnimationPointSet(index, this.stopTime)
-    
-      this.step_move = true
-    
-      // this.animation(
-      //   this.stopTime/1000,
-      //   this.stepStartTime[index]/1000, this.parent.rote_speed)
-      this.animationStart(this.mode_direction)
-        
-      this.animation_start_time = Date.now()
-      this.stepAnimationStart(index, -this.parent.rote_speed)
-      this.step_time_meter.animationPlay(this.stopTime, -this.parent.rote_speed)
+  
+    else{
+      // console.log(`step in step return`)
+      newStep = e.target.classList[0].slice(4)
     }
-    async learning_btn_func(){
-      
-      if(this.step_move) return
-      if(this.parent.cube_mode != "Execution" && this.parent.cube_mode != "learning") return
+  
+    await this.stepChange(parseInt(newStep))
+  }
+  execution_btn_func(){
+    if(this.parent.cube_mode !== "Execution")	return
+    if(this.step_move) return
+  
+    this.learning_btn.style.display = "none"
     
-      const index = this.stepSkip[this.stepCount]
-    
-      if(this.parent.cube_mode == "Execution"){
-    
-        // this.full_cube.object3D.traverse((e)=>{
-        //   if(e.type=="Group" && ( e.name=="fco" || e.name=="fce" || e.name=="fed")){
-        //     e.removeFromParent()
-        //   }
-        // })
-        
-        this.parent.ObjectManager.objects.handL.visible = false
-        this.parent.ObjectManager.objects.handR.visible = false
-    
-        this.learning_btn.querySelector("p").textContent = '解説モードへ'
+    this.next_btn.removeEventListener("click", this.next_btn_func)
+    this.back_btn.removeEventListener("click", this.back_btn_func)
+    this.stop_btn.removeEventListener("click", this.stop_btn_func)
+    this.play_btn.removeEventListener("click", this.play_btn_func)
+    this.reverse_btn.removeEventListener("click", this.reverse_btn_func)
+    this.learning_btn.removeEventListener("click", this.learning_btn_func)
+    this.stepList.removeEventListener("click", this.stepList_func)
+    this.execution_btn.removeEventListener("click", this.execution_btn_func)
+    this.AnimeManager.mixersName.cube.mixer.removeEventListener("finished", this.stepAnimationEnd)
 
-        this.parent.dispCube.cube = this.Datas[this.groupRotesCube[index]]
-        // cubeset(full_cube.object3D, this.dispCube.cube)
-        cubeset(this.parent.ObjectManager.objects.cube, this.parent.dispCube.cube)
-    
-        this.parent.Mode_set("learning")
-      }
-      else if(this.parent.cube_mode == "learning"){
-        this.parent.Mode_set("Execution")
+    this.step_time_meter.dispose()
+    this.step_time_meter = null
 
-        this.parent.ObjectManager.objects.handL.visible = true
-        this.parent.ObjectManager.objects.handR.visible = true
-        
-        this.learning_btn.querySelector("p").textContent = '試行モードへ'
+    this.SceneManager.outlinePass.selectedObjects = []
+
     
-        await this.stepChange(this.stepCount)
-      }
+    this.stepRmoveAnim()
+    
+    console.log("解説　終了")
+    this.parent.Execution_End()
+  }
+  stepAnimationEnd(){
+    
+    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.step_move) return
+  
+    const index = this.stepSkip[this.stepCount]
+  
+    if(index == -1){
+      return {skip: true, }
     }
-    async stepList_func(e){
-      
-      if(this.parent.cube_mode !== "Execution")	return
-      if(this.step_move) return
-    
-      let newStep = -1
-      if(this.step_move){
-        // console.log(`動作中`)
-        return
-      }
-    
-      if(e.target.classList.contains("step-thiss")){
-        // console.log(`枠 return`)
-        return
-      }
-      
-      if(e.target.classList.contains("step-mode")){
-        // console.log(`step return`)
-        if(parseInt(e.target.classList[1].slice(4)) == this.stepCount) return
-        newStep = e.target.classList[1].slice(4)
-      }
-    
-      else{
-        // console.log(`step in step return`)
-        newStep = e.target.classList[0].slice(4)
-      }
-    
-      await this.stepChange(parseInt(newStep))
-    }
-    execution_btn_func(){
-      if(this.parent.cube_mode !== "Execution")	return
-      if(this.step_move) return
-    
-      this.learning_btn.style.display = "none"
-      
-      this.next_btn.removeEventListener("click", this.next_btn_func)
-      this.back_btn.removeEventListener("click", this.back_btn_func)
-      this.stop_btn.removeEventListener("click", this.stop_btn_func)
-      this.play_btn.removeEventListener("click", this.play_btn_func)
-      this.reverse_btn.removeEventListener("click", this.reverse_btn_func)
-      this.learning_btn.removeEventListener("click", this.learning_btn_func)
-      this.stepList.removeEventListener("click", this.stepList_func)
-      this.execution_btn.removeEventListener("click", this.execution_btn_func)
-      this.parent.cubeAnim.mixer.removeEventListener("finished", this.stepAnimationEnd)
 
-      this.step_time_meter.dispose()
-      this.step_time_meter = null
+    console.log(`アニメーション  終了`)
 
-      this.parent.SceneManager.outlinePass.selectedObjects = []
-
-      
-      this.stepRmoveAnim()
-      
-      console.log("解説　終了")
-      this.parent.Execution_End()
-    }
-    stepAnimationEnd(){
-      
-      if(this.parent.cube_mode !== "Execution")	return
-      if(!this.step_move) return
-    
-      const index = this.stepSkip[this.stepCount]
-    
-      if(index == -1){
-        return {skip: true, }
-      }
-
-      console.log(`アニメーション  終了`)
-
-      const _index = this.mode_direction > 0 ? index+1 : index
-    
-      // console.log({func: `animation-finished`, _index})
-      this.step_move = false
-      this.stopTime = this.stepStartTime[_index] - this.stepStartTime[index]
-      this.step_time_meter.animationPause(this.stopTime)
-    }
+    const _index = this.mode_direction > 0 ? index+1 : index
+  
+    // console.log({func: `animation-finished`, _index})
+    this.step_move = false
+    this.stopTime = this.stepStartTime[_index] - this.stepStartTime[index]
+    this.step_time_meter.animationPause(this.stopTime)
+  }
 }

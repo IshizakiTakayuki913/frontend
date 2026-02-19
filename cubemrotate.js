@@ -1,9 +1,7 @@
 import * as THREE from 'three'
 
 import {
-  State, cubeState, set_color_data, color_set,
-  cube_Full_Animation_Make, cubeset, wait,
-  objectPrint, positionGet, hitObjecet
+  cube_Full_Animation_Make, cubeset, hitObjecet
 } from './solve.js'
 
 import data from './data/moves.json' with { type: 'json' }
@@ -87,10 +85,14 @@ export class cubemrotate{
   new_move = null
   new_rad = null
 
-	constructor(_data = {scene: null, camOut: null, parent: null}) {
+	constructor(_data = {scene: null, camOut: null, parent: null,
+      ObjectManager: null, AnimeManager: null, SceneManager: null}) {
 		this.scene = _data.scene
 		this.camOut = _data.camOut
 		this.parent = _data.parent
+    this.ObjectManager = _data.ObjectManager
+    this.AnimeManager = _data.AnimeManager
+    this.SceneManager =  _data.SceneManager
 		
     const geometry = new THREE.PlaneGeometry(10, 10, 4,4)
     const material = new THREE.MeshBasicMaterial({ 
@@ -102,7 +104,7 @@ export class cubemrotate{
     plane.name = "tile"
     plane.visible = false
     this.tile = plane
-    this.parent.SceneManager.scene.add(this.tile)
+    this.SceneManager.scene.add(this.tile)
 
     this.makeDebugPoint = this.makeDebugPoint.bind(this)
 
@@ -294,7 +296,7 @@ export class cubemrotate{
       value = dist.y
     }
     if(roteInde == -1){
-      if(this.new_move !== null) this.parent.cubeAnim.showFrameAt(0)
+      if(this.new_move !== null) this.AnimeManager.mixersName.cube.showFrameAt(0)
       return
     }  
 
@@ -309,19 +311,19 @@ export class cubemrotate{
     // )
 
     if(this.raycast_rotate_T && this.new_move !== null && this.new_move != move){
-      this.parent.cubeAnim.remove()
-      cubeset(this.parent.ObjectManager.objects.cube, this.parent.dispCube.cube)
-      this.parent.cubeAnim.set({animationData: this.anims[move], fps: 1, timeScale: rotaSpped})
-      this.parent.cubeAnim.showFrameAt({time: value})
+      this.AnimeManager.mixersName.cube.remove()
+      cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+      this.AnimeManager.mixersName.cube.set({animationData: this.anims[move], fps: 1, timeScale: rotaSpped})
+      this.AnimeManager.mixersName.cube.showFrameAt({time: value})
     }
     else if(this.raycast_rotate_T && this.new_move === null){
-      this.parent.cubeAnim.remove()
-      cubeset(this.parent.ObjectManager.objects.cube, this.parent.dispCube.cube)
-      this.parent.cubeAnim.set({animationData: this.anims[move], fps: 1, timeScale: rotaSpped})
-      this.parent.cubeAnim.showFrameAt({time: value})
+      this.AnimeManager.mixersName.cube.remove()
+      cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+      this.AnimeManager.mixersName.cube.set({animationData: this.anims[move], fps: 1, timeScale: rotaSpped})
+      this.AnimeManager.mixersName.cube.showFrameAt({time: value})
     }
     else if(this.raycast_rotate_T){
-      this.parent.cubeAnim.showFrameAt({time: value})
+      this.AnimeManager.mixersName.cube.showFrameAt({time: value})
     }
 
     this.new_move = move
@@ -336,13 +338,13 @@ export class cubemrotate{
       const move = this.new_move
       
       if(rad < 0.125){
-        this.parent.cubeAnim.play({timeScale: -rotaSpped})
+        this.AnimeManager.mixersName.cube.play({timeScale: -rotaSpped})
         this.parent.cubeMoveEnd = this.time + 1000 / rotaSpped
         return
       }
 
 			this.parent.dispCube.cube = this.parent.dispCube.cube.apply_move(moves[move])
-      this.parent.cubeAnim.play({timeScale: rotaSpped})
+      this.AnimeManager.mixersName.cube.play({timeScale: rotaSpped})
       this.parent.cubeMoveEnd = this.time + 1000 / rotaSpped
     }
   }
@@ -361,12 +363,12 @@ export class cubemrotate{
       {x:e.offsetX , y:e.offsetY},
 			this.scene,
       this.camOut,
-      [this.parent.ObjectManager.objects.cube]
+      [this.ObjectManager.objects.cube]
     )
     this.parts = _parts.length > 0 ? _parts[0] : null
 
     if(this.parts === null) return
-    cubeset(this.parent.ObjectManager.objects.cube, this.parent.dispCube.cube)
+    cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
     this.search_parts()	
     this.mousePress = true
     this.mousePos = {x:e.offsetX , y:e.offsetY}
@@ -387,12 +389,12 @@ export class cubemrotate{
       {x:e.touches[0].clientX , y:e.touches[0].clientY},
 			this.scene,
       this.camOut,
-      [this.parent.ObjectManager.objects.cube]
+      [this.ObjectManager.objects.cube]
     )
     this.parts = _parts.length > 0 ? _parts[0] : null
 
     if(this.parts === null) return
-    cubeset(this.parent.ObjectManager.objects.cube, this.parent.dispCube.cube)
+    cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
     this.search_parts()	
     
     this.touchPress = true
@@ -458,7 +460,7 @@ export class cubemrotate{
   }
 	dispose(){
 
-    this.scene.removeChild(this.tile_out)
+    this.SceneManager.scene.remove(this.tile)
 
 		this.scene.removeEventListener('mousedown', this.mouseDown)
 		document.removeEventListener('mousemove', this.mouseMove)

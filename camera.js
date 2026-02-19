@@ -12,10 +12,14 @@ export class camera {
 	#angle = {x: 0, y:0, z: 0 ,r: 5}
 	// #angle = new THREE.Rotation()
 	
-	constructor(_data = {scene: null, camOut: null, parent: null}) {
+	constructor(_data = {scene: null, camOut: null, parent: null,
+      ObjectManager: null, AnimeManager: null, SceneManager: null}) {
 		this.scene = _data.scene
 		this.camOut = _data.camOut
 		this.parent = _data.parent
+    this.ObjectManager = _data.ObjectManager
+    this.AnimeManager = _data.AnimeManager
+    this.SceneManager =  _data.SceneManager
 		
 		this.mousePress = false
 		this.touchPress = false
@@ -91,7 +95,7 @@ export class camera {
       point,
 			this.scene,
 			this.camOut,
-			[this.parent.ObjectManager.objects.cube]
+			[this.ObjectManager.objects.cube]
     )
     if(_parts.length > 0) return
 
@@ -143,7 +147,7 @@ export class camera {
       point,
 			this.scene,
 			this.camOut,
-			[this.parent.ObjectManager.objects.cube]
+			[this.ObjectManager.objects.cube]
     )
     if(_parts.length > 0) return
 

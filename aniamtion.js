@@ -3,14 +3,16 @@ import * as THREE from 'three'
 export class AnimationManager{
   count = 0
   mixers = []
+  mixersName = {}
 
   constructor(_data = {}){
   }
-  create(_data = {scene: null}){
+  create(_data = {scene: null, name: null}){
     this.count += 1
 
     const _mixer = new Animation({scene: _data.scene})
     this.mixers.push(_mixer)
+    this.mixersName[_data.name] = _mixer
 
     return _mixer
   }

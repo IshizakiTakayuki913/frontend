@@ -1,18 +1,19 @@
 import {
-  State, cubeState, set_color_data, color_set,
-  cube_Full_Animation_Make, cubesetData, cubeset, wait,
-  objectPrint, positionGet,
-  hitObjecet
+  State, set_color_data, hitObjecet
 } from './solve.js'
 
 export class colorinput{
   Colorset = false
 
-	constructor(_data = {scene: null, disp: null, camOut: null, parent: null}) {
+	constructor(_data = {scene: null, disp: null, camOut: null, parent: null,
+      ObjectManager: null, AnimeManager: null, SceneManager: null}) {
 		this.scene = _data.scene
 		this.disp = _data.disp
 		this.camOut = _data.camOut
     this.parent = _data.parent
+    this.ObjectManager = _data.ObjectManager
+    this.AnimeManager = _data.AnimeManager
+    this.SceneManager =  _data.SceneManager
 
 		this.mousePress = false
 		this.touchPress = false
@@ -387,7 +388,7 @@ export class colorinput{
       {x:e.offsetX , y:e.offsetY},
 			this.scene,
       this.camOut,
-      [this.parent.ObjectManager.objects.cube]
+      [this.ObjectManager.objects.cube]
     )
 
     this.parts = _parts.length > 0 ? _parts[0] : null
@@ -408,7 +409,7 @@ export class colorinput{
       {x:e.touches[0].clientX , y:e.touches[0].clientY},
 			this.scene,
       this.camOut,
-      [this.parent.ObjectManager.objects.cube]
+      [this.ObjectManager.objects.cube]
     )
 
     this.parts = _parts.length > 0 ? _parts[0] : null

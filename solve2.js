@@ -1,7 +1,5 @@
 import {
-  State, cubeState, set_color_data, color_set,
-  cube_Full_Animation_Make, cubeset, wait,
-  objectPrint, positionGet
+  cube_Full_Animation_Make, cubeset
 } from './solve.js'
 
 import data from './data/moves.json' with { type: 'json' }
@@ -43,9 +41,13 @@ export class presskeyboard{
 		'KeyM':'f',
 		'KeyU':'b',
 	}
-	constructor(_data = {parent: null}) {
+	constructor(_data = {parent: null,
+      ObjectManager: null, AnimeManager: null, SceneManager: null}) {
 
     this.parent = _data.parent
+    this.ObjectManager = _data.ObjectManager
+    this.AnimeManager = _data.AnimeManager
+    this.SceneManager =  _data.SceneManager
 
 		this.keyDown = this.keyDown.bind(this)
 		window.addEventListener("keydown", this.keyDown)
@@ -97,10 +99,10 @@ export class presskeyboard{
 
 		this.parent.cubeMoveEnd = this.time + 1000 / rotaSpped
 		
-		this.parent.cubeAnim.remove()
-		cubeset(this.parent.ObjectManager.objects.cube, this.parent.dispCube.cube)
-		this.parent.cubeAnim.set({animationData: anims, fps: 1, timeScale: rotaSpped})
-		this.parent.cubeAnim.action.paused = false
+		this.AnimeManager.mixersName.cube.remove()
+		cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+		this.AnimeManager.mixersName.cube.set({animationData: anims, fps: 1, timeScale: rotaSpped})
+		this.AnimeManager.mixersName.cube.action.paused = false
 	}
   dispose(){
 		window.removeEventListener("keydown", this.keyDown)
