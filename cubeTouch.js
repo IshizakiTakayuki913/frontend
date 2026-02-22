@@ -24,8 +24,8 @@ window.objectPrint = objectPrint
 
 
 class cubemode{
-  cubeHolding  = true
-  cubeMoveEnd = 0
+  #cubeHolding  = true
+  #cubeMoveEnd = 0
   // this.#cubeTouching = true
   // this.#cubeMoving = true
   // this.load_end = true
@@ -40,6 +40,24 @@ class cubemode{
     "Rotation":     1,
     "Colorset":     2,
   }
+
+  static STATE_INIT      = 0	// 閲覧
+  static STATE_EXPLORE   = 1	// 閲覧
+  static STATE_EDITING   = 2	// 色入力
+  static STATE_ANALYZING = 3	// 解析中
+  static STATE_GUIDING   = 4	// 解説再生
+  static STATE_PRACTICE  = 5	// 練習(試行)
+
+  currentState = null
+  currentFlags = null
+
+  // --- 許可フラグ (何をしていいか) ---
+  static ALLOW_VIEW_CONTROL   = 1 << 0
+  static ALLOW_TOUCH_ROTATE   = 1 << 1
+  static ALLOW_KEY_ROTATE     = 1 << 2
+  static ALLOW_COLOR_PICK     = 1 << 3
+  static ALLOW_ANIM_CONTROL   = 1 << 4
+
   mode_list = [
     [ true,  true, false],
     [false, false, false],
@@ -49,13 +67,192 @@ class cubemode{
   ]
   rote_speed = 2
 
-  
 	constructor() {
+    this.currentState = cubemode.STATE_INIT
+    this.currentFlags = 0
+
+	// --- 2. 有効フラグの設定 (どの状態で何ができるか) ---
+    this.permissions = {
+      [cubemode.STATE_INIT]: 0,
+      [cubemode.STATE_EXPLORE]: 
+        cubemode.ALLOW_VIEW_CONTROL | cubemode.ALLOW_TOUCH_ROTATE | cubemode.ALLOW_KEY_ROTATE,
+      [cubemode.STATE_EDITING]: 
+        cubemode.ALLOW_VIEW_CONTROL | cubemode.ALLOW_COLOR_PICK,
+      [cubemode.STATE_ANALYZING]: cubemode.ALLOW_VIEW_CONTROL | cubemode.ALLOW_ANIM_CONTROL,
+      [cubemode.STATE_GUIDING]: 
+        cubemode.ALLOW_VIEW_CONTROL | cubemode.ALLOW_ANIM_CONTROL,
+      [cubemode.STATE_PRACTICE]: 
+        cubemode.ALLOW_VIEW_CONTROL | cubemode.ALLOW_TOUCH_ROTATE | cubemode.ALLOW_KEY_ROTATE | cubemode.ALLOW_ANIM_CONTROL,
+    };
+
+    // --- 3. 遷移ルールの設定 (どこからどこへ行けるか) ---
+    this.transitionRules = {
+      [cubemode.STATE_INIT]:   [cubemode.STATE_EXPLORE],
+      [cubemode.STATE_EXPLORE]:   [cubemode.STATE_EDITING, cubemode.STATE_ANALYZING],
+      [cubemode.STATE_EDITING]:   [cubemode.STATE_EXPLORE],
+      [cubemode.STATE_ANALYZING]: [cubemode.STATE_GUIDING],
+      [cubemode.STATE_GUIDING]:   [cubemode.STATE_PRACTICE, cubemode.STATE_EXPLORE],
+      [cubemode.STATE_PRACTICE]:  [cubemode.STATE_GUIDING]
+    };
+
     // console.log(`メインシステムが読み込み完了！`)
     this.fileLoaded = this.fileLoaded.bind(this)
 
     window.addEventListener("load", this.fileLoaded)
 	}
+  changeState(nextState) {
+    const allowed = this.transitionRules[this.currentState];
+    
+    if (allowed && allowed.includes(nextState)) {
+      // console.log(`State Changed: ${this.currentState} -> ${nextState}`);
+      this.onStateEnter(nextState);
+      return true
+    } else {
+      console.warn(`Invalid Transition: ${this.currentState} to ${nextState}`);
+      return false
+    }
+  }
+
+  onStateEnter(nextState) {
+
+    // 状態が変わった瞬間に一度だけやりたいこと
+    const oldFlags = this.currentFlags;
+    const nextFlags = this.permissions[nextState];
+
+    // 1. 変化があったフラグだけを抽出 (XOR演算)
+    const diff = oldFlags ^ nextFlags;
+
+    // 2. 「新しく追加されたフラグ」と「消えたフラグ」を特定
+    const activated = nextFlags & diff;
+    const deactivated = oldFlags & diff;
+
+    console.log({activated, deactivated})
+
+    // 3. 各機能のON/OFFを実行
+    this.initializ(deactivated, false);
+    this.initializ(activated, true);
+
+    // 状態更新
+    this.currentState = nextState;
+    this.currentFlags = nextFlags;
+    
+    // if (state === cubemode.STATE_EXPLORE) {
+    //   // if(this.Viewpoint) 
+    // }else if (state === cubemode.STATE_EDITING) {
+
+    // }else if (state === cubemode.STATE_ANALYZING) {
+      
+    // }else if (state === cubemode.STATE_GUIDING) {
+      
+    // }else if (state === cubemode.STATE_PRACTICE) {
+      
+    // }
+  }
+
+  initializ(flag, bool){
+    if((flag & cubemode.ALLOW_VIEW_CONTROL) !== 0 ){
+      if(!bool) {
+        this.Viewpoint.dispose()
+        this.Viewpoint = null
+      }else{
+        this.Viewpoint = new camera({
+          scene: this.SceneManager.canvas, camOut: this.SceneManager.camera,
+          ObjectManager: this.ObjectManager,
+          AnimeManager: this.AnimeManager,
+          SceneManager: this.SceneManager,
+          status: this.mode_set_Viewpointer.bind(this),
+        })
+      }
+    }
+    if((flag & cubemode.ALLOW_TOUCH_ROTATE) !== 0){    
+      if(!bool) {
+        this.Rotation.dispose()
+        this.Rotation = null
+      }else{  
+        this.Rotation = new cubemrotate({
+          scene: this.SceneManager.canvas, camOut: this.SceneManager.camera,
+          ObjectManager: this.ObjectManager,
+          AnimeManager: this.AnimeManager,
+          SceneManager: this.SceneManager,
+          dispCube: this.dispCube,
+          status: this.mode_set_Rotation.bind(this),
+          getCubeHolding: () => this.cubeHolding,
+          setCubeHolding: (b) => this.cubeHolding = b,
+          getCubeMoveEnd: () => this.cubeMoveEnd,
+          setCubeMoveEnd: (t) => this.cubeMoveEnd = t
+        })
+      }
+    }
+    if((flag & cubemode.ALLOW_KEY_ROTATE) !== 0){    
+      if(!bool) {
+        this.presskey.dispose()
+        this.presskey = null
+      }else{  
+        this.presskey = new presskeyboard({
+          scene: this.SceneManager.canvas, camOut: this.SceneManager.camera,
+          ObjectManager: this.ObjectManager,
+          AnimeManager: this.AnimeManager,
+          SceneManager: this.SceneManager,
+          dispCube: this.dispCube,
+          status: this.mode_set_presskey.bind(this),
+          getCubeHolding: () => this.cubeHolding,
+          setCubeHolding: (b) => this.cubeHolding = b,
+          getCubeMoveEnd: () => this.cubeMoveEnd,
+          setCubeMoveEnd: (t) => this.cubeMoveEnd = t
+        })
+      }
+    }
+    if((flag & cubemode.ALLOW_COLOR_PICK) !== 0){
+      if(!bool) {
+        this.Colorset.dispose()
+        this.Colorset = null
+      }else{  
+        this.Colorset = new colorinput({
+          scene: this.SceneManager.canvas, camOut: this.SceneManager.camera, disp: this._main,
+          ObjectManager: this.ObjectManager,
+          AnimeManager: this.AnimeManager,
+          SceneManager: this.SceneManager,
+          status: this.mode_set_Colorseter.bind(this),
+          Color_completion: this.Color_completion.bind(this)
+        })
+      }
+    }
+    if((flag & cubemode.ALLOW_ANIM_CONTROL) !== 0){
+      if(!bool){
+        this.timeList.dispose()
+        this.timeList = null
+      }else{
+        this.timeList = new motionList({  
+          full_cube: this.ObjectManager.objects.cube,
+          L_hand: this.ObjectManager.objects.handL,
+          R_hand: this.ObjectManager.objects.handR,
+          dispCube: this.dispCube,
+          ObjectManager: this.ObjectManager,
+          AnimeManager: this.AnimeManager,
+          SceneManager: this.SceneManager,
+          status: this.mode_set_Guider.bind(this),
+          allow_practice: this.mode_Practicer.bind(this),
+          Change_Guide: this.func_Change_Guide.bind(this),
+          Change_Practice: this.func_Change_Practice.bind(this),
+          get_speed: () => { return this.rote_speed}
+        })
+      }
+    }
+  }
+
+  get cubeHolding(){
+    return this.#cubeHolding
+  }
+  set cubeHolding(bool){
+    this.#cubeHolding = bool
+  }
+  get cubeMoveEnd(){
+    return this.#cubeMoveEnd
+  }
+  set cubeMoveEnd(time){
+    this.#cubeMoveEnd = time
+  }
+
   async fileLoaded(){
     console.log("すべてのリソース（画像・CSS・JS）が読み込み完了！")
     window.removeEventListener("load", this.fileLoaded)
@@ -122,18 +319,18 @@ class cubemode{
       })
     }
 
-    this.color_set_buttont = document.getElementsByClassName("color-set-buttont")[0]
+    
     this.calculation_set_buttont = document.getElementsByClassName("calculation_set_buttont")[0]
-    this.fullscreen_buttont = document.getElementsByClassName("fullscreen_buttont")[0]
-
-
     this.func_calculation_set_buttont = this.func_calculation_set_buttont.bind(this)
 		this.calculation_set_buttont.addEventListener('click', this.func_calculation_set_buttont)
-
+    
+    
+    this.color_set_buttont = document.getElementsByClassName("color-set-buttont")[0]
     this.func_color_set_buttont = this.func_color_set_buttont.bind(this)
 		this.color_set_buttont.addEventListener('click', this.func_color_set_buttont)
-
     
+    
+    this.fullscreen_buttont = document.getElementsByClassName("fullscreen_buttont")[0]
     this.func_fullscreen_buttont = this.func_fullscreen_buttont.bind(this)
 		this.fullscreen_buttont.addEventListener('click', this.func_fullscreen_buttont)
 
@@ -175,6 +372,7 @@ class cubemode{
     mainCanvas.classList.add("main-display")
     const _main = document.querySelector("#main-display")
     _main.appendChild(mainCanvas)
+    this._main = _main
 
     const scnMan = new SceneManager({
       canvasEl: mainCanvas, 
@@ -242,33 +440,10 @@ class cubemode{
     
     color_set(this.dispCube.color.c, objMan.objects.cube)
     cubeset(objMan.objects.cube, this.dispCube.cube)
-
-	  this.Viewpoint = new camera({
-      scene: mainCanvas, camOut: scnMan.camera, parent: this,
-      ObjectManager: this.ObjectManager,
-      AnimeManager: this.AnimeManager,
-      SceneManager: this.SceneManager
-    })
     
-	  this.Colorset = new colorinput({scene: mainCanvas, camOut: scnMan.camera, disp: _main, parent: this,
-      ObjectManager: this.ObjectManager,
-      AnimeManager: this.AnimeManager,
-      SceneManager: this.SceneManager
-    })
-	  this.presskey = new presskeyboard({scene: mainCanvas, camOut: scnMan.camera, parent: this,
-      ObjectManager: this.ObjectManager,
-      AnimeManager: this.AnimeManager,
-      SceneManager: this.SceneManager
-    })
-	  this.Rotation = new cubemrotate({scene: mainCanvas, camOut: scnMan.camera, parent: this,
-      ObjectManager: this.ObjectManager,
-      AnimeManager: this.AnimeManager,
-      SceneManager: this.SceneManager
-    })
-    
-    this.cubeHolding  = false 
+    this.#cubeHolding  = false 
 
-    this.Mode_set("Free")
+    this.changeState(cubemode.STATE_EXPLORE)
   }
   makeCube(objs){
     const root = new THREE.Group()
@@ -377,80 +552,23 @@ class cubemode{
       }
     })
   }
-  Mode_set(Nmode){
-    // console.trace(`Nmode: ${Nmode}`)
-
-    this.cube_mode = Nmode
-
-    this.Viewpoint.Viewpoint = this.mode_list[this.cube_modes[this.cube_mode]][this.cube_modes["Viewpoint"]]
-    this.presskey.Rotation   = this.mode_list[this.cube_modes[this.cube_mode]][this.cube_modes["Rotation"]]
-    this.Rotation.Rotation = this.mode_list[this.cube_modes[this.cube_mode]][this.cube_modes["Rotation"]]
-    this.Colorset.Colorset = this.mode_list[this.cube_modes[this.cube_mode]][this.cube_modes["Colorset"]]
-
+  mode_set_Colorseter(){
+    return (this.currentFlags & cubemode.ALLOW_COLOR_PICK) !== 0
   }
-  async Calculation(){
-
-    this.icon.classList.add("rotate-ani")
-    this.icon.style.display = "block"
-
-
-    await wait(100)
-
-    const time = Date.now()
-
-    const reqData = {ss: this.dispCube.cube, cd: this.dispCube.color.c}
-    const request = await fetch(
-      'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010', {
-      // 'http://localhost:7071/api/CubeSovleFunction010', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            // 'x-api-key': 'qwaszx'
-        },
-        body: JSON.stringify(reqData)
-    })
-    console.log(request)
-    const response = await request.json()
-    console.log(response)
-
-    const { res_cd, res_sl, res_tk, amime } = response.inf
-
-    this.timeList = new motionList({  
-      full_cube: this.ObjectManager.objects.cube,
-      L_hand: this.ObjectManager.objects.handL,
-      R_hand: this.ObjectManager.objects.handR,
-      parent: this,
-      ObjectManager: this.ObjectManager,
-      AnimeManager: this.AnimeManager,
-      SceneManager: this.SceneManager
-    })
-
-    this.saveCube = this.dispCube.clone()
-
-    await this.timeList.ins(this.dispCube.cube.copy(), res_cd, res_sl, res_tk, amime)
-
-    localStorage.setItem("json", localStorage.getItem("json")+" "+(Date.now() - time))
-    
-    await wait(100)
-
-    this.icon.style.display = "none"
-    this.icon.classList.remove("rotate-ani")
-    
-    this.ObjectManager.objects.handL.visible = true
-    this.ObjectManager.objects.handR.visible = true
-
-    this.Mode_set("Execution")
+  mode_set_presskey(){
+    return (this.currentFlags & cubemode.ALLOW_KEY_ROTATE) !== 0
   }
-  Execution_End(){
-    this.ObjectManager.objects.handL.visible = false
-    this.ObjectManager.objects.handR.visible = false
-
-    this.dispCube.cube.set(this.saveCube.cube)
-    this.dispCube.color.set(this.saveCube.color)
-
-    cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
-
-    this.Mode_set("Free")
+  mode_set_Rotation(){
+    return (this.currentFlags & cubemode.ALLOW_TOUCH_ROTATE) !== 0
+  }
+  mode_set_Viewpointer(){
+    return (this.currentFlags & cubemode.ALLOW_VIEW_CONTROL) !== 0
+  }
+  mode_set_Guider(){
+    return this.currentState === cubemode.STATE_GUIDING
+  }
+  mode_Practicer(){
+    return this.currentState === cubemode.STATE_PRACTICE
   }
   Color_completion(Check_ans){
     this.dispCube.cube.set(Check_ans)
@@ -458,43 +576,78 @@ class cubemode{
 
     cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
     color_set(this.dispCube.color.c, this.ObjectManager.objects.cube)
-
-    this.Mode_set("Free")
+    
+    this.changeState(cubemode.STATE_EXPLORE)
   }
-  modeleData(data){
-    console.log(`cube mode modeleData`)
+  async func_calculation_set_buttont(){
+    if(this.currentState == cubemode.STATE_EXPLORE){
+      this.changeState(cubemode.STATE_ANALYZING)
 
-    // full_cube = data.full_cube
-    // model_centers = data.model_centers
-    // model_corners = data.model_corners
-    // model_edges = data.model_edges
-    // bone_centers = data.bone_centers
-    // bone_corners = data.bone_corners
-    // bone_edges = data.bone_edges
-    // L_hand = data.L_hand
-    // R_hand = data.R_hand
-    // frameObj = data.frameObj
+      this.icon.classList.add("rotate-ani")
+      this.icon.style.display = "block"
 
-    // console.log(full_cube)
-    cubeset(full_cube.object3D, this.dispCube.cube)
+      await wait(100)
 
-    this.load_end = false
-  }
-  func_calculation_set_buttont(){
-    if(this.cube_mode == "Free"){
-      this.Mode_set("Calculation")
-      this.Calculation()
+      const time = Date.now()
+
+      const reqData = {ss: this.dispCube.cube, cd: this.dispCube.color.c}
+      const request = await fetch(
+        'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010', {
+        // 'http://localhost:7071/api/CubeSovleFunction010', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              // 'x-api-key': 'qwaszx'
+          },
+          body: JSON.stringify(reqData)
+      })
+      console.log(request)
+      const response = await request.json()
+      console.log(response)
+
+      const { res_cd, res_sl, res_tk, amime } = response.inf
+
+
+      this.saveCube = this.dispCube.clone()
+
+      console.log(this.timeList)
+
+      await this.timeList.ins(this.dispCube.cube.copy(), res_cd, res_sl, res_tk, amime)
+
+      localStorage.setItem("json", localStorage.getItem("json")+" "+(Date.now() - time))
+      
+      await wait(100)
+
+      this.icon.style.display = "none"
+      this.icon.classList.remove("rotate-ani")
+      
+      this.ObjectManager.objects.handL.visible = true
+      this.ObjectManager.objects.handR.visible = true
+
+      this.changeState(cubemode.STATE_GUIDING)
     }
-    else if(this.cube_mode == "Execution"){
-      // execution_btn_func()
-      this.timeList.execution_btn_func()
+    else if(this.currentState == cubemode.STATE_GUIDING){
+      if(this.timeList.step_move)  return
+
+      this.changeState(cubemode.STATE_EXPLORE)
+      
+      this.ObjectManager.objects.handL.visible = false
+      this.ObjectManager.objects.handR.visible = false
+
+      this.dispCube.cube.set(this.saveCube.cube)
+      this.dispCube.color.set(this.saveCube.color)
+
+      cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
     }
   }
   func_color_set_buttont(){
-    if(this.cube_mode !== "Free") return
-    this.Mode_set("Input")
-    cubeset(this.ObjectManager.objects.cube, new State())
-    this.Colorset.Intiset()
+    this.changeState(cubemode.STATE_EDITING)
+  }
+  func_Change_Practice(){
+    this.changeState(cubemode.STATE_PRACTICE)
+  }
+  func_Change_Guide(){
+    this.changeState(cubemode.STATE_GUIDING)
   }
   func_fullscreen_buttont(){
     if (!document.fullscreenElement) {

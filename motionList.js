@@ -40,8 +40,10 @@ export class motionList{
    */
   constructor({
     full_cube = null, 
-    L_hand = null, R_hand = null, frameObj = null, parent = null,
-    ObjectManager = null, AnimeManager = null, SceneManager = null
+    L_hand = null, R_hand = null, frameObj = null, dispCube = null,
+    ObjectManager = null, AnimeManager = null, SceneManager = null,
+    status = null, allow_practice= null, Change_Guide = null, Change_Practice = null,
+    get_speed = null
   } = {}  ){
     // console.log({model_centers, bone_centers})
 
@@ -49,11 +51,16 @@ export class motionList{
     this.L_hand = L_hand
     this.R_hand = R_hand
     this.frameObj = frameObj
-    this.parent = parent
+    this.dispCube = dispCube
     
     this.ObjectManager = ObjectManager
     this.AnimeManager = AnimeManager
     this.SceneManager = SceneManager
+    this.status = status
+    this.allow_practice = allow_practice
+    this.Change_Guide = Change_Guide
+    this.Change_Practice = Change_Practice
+    this.get_speed = get_speed
 
     this.mew_motion = true
     this.animation_start_time = undefined
@@ -79,7 +86,6 @@ export class motionList{
     this.reverse_btn_func = this.reverse_btn_func.bind(this)
     this.learning_btn_func = this.learning_btn_func.bind(this)
     this.stepList_func = this.stepList_func.bind(this)
-    this.execution_btn_func = this.execution_btn_func.bind(this)
     this.stepAnimationEnd = this.stepAnimationEnd.bind(this)
 
     this.back_btn = document.querySelector('.back-div')
@@ -89,14 +95,12 @@ export class motionList{
     this.stop_btn = document.querySelector('.stop-div')
     this.stepList = document.querySelector(`.step-lists`)
     this.learning_btn = document.querySelector(`.learning-div`)
-    this.execution_btn = document.querySelector('.execution-div')
     
     this.next_btn.addEventListener("click", this.next_btn_func)
     this.back_btn.addEventListener("click", this.back_btn_func)
     this.stop_btn.addEventListener("click", this.stop_btn_func)
     this.play_btn.addEventListener("click", this.play_btn_func)
     this.reverse_btn.addEventListener("click", this.reverse_btn_func)
-    this.execution_btn.addEventListener("click", this.execution_btn_func)
     this.learning_btn.addEventListener("click", this.learning_btn_func)
     this.stepList.addEventListener("click", this.stepList_func)
 
@@ -423,7 +427,7 @@ export class motionList{
 
     
     // this.AnimeManager.mixersName.cube.remove()
-    // cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+    // cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
     // this.AnimeManager.mixersName.cube.set({animationData: anims, fps: 1, timeScale: rotaSpped})
     // this.AnimeManager.mixersName.cube.action.paused = false
 
@@ -634,7 +638,7 @@ export class motionList{
   }
   meter(Data){
     
-    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.status())	return
 
     const index = this.stepSkip[this.stepCount]
     if(index == undefined || index == -1){
@@ -747,7 +751,7 @@ export class motionList{
     this.SceneManager.outlinePass.selectedObjects = objes
   }
   async next_btn_func(){
-    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.status())	return
     if(this.step_move)  return
     
     if(this.stepCount == 15)  return {skip: true, check: "over"}
@@ -756,7 +760,7 @@ export class motionList{
     await this.stepChange(this.stepCount)
   }
   async back_btn_func(){
-    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.status())	return
     if(this.step_move)  return
   
     if(this.stepCount == 0)  return {skip: true, check: "over"}
@@ -765,7 +769,7 @@ export class motionList{
     await this.stepChange(this.stepCount)
   }
   stop_btn_func(){
-    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.status())	return
     if(!this.step_move) return
   
     clearTimeout(this.timeOutId)
@@ -788,14 +792,14 @@ export class motionList{
   }
   play_btn_func(){
     
-    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.status())	return
     if(this.step_move) return
   
     const index = this.stepSkip[this.stepCount]
     if(index == -1)  return {skip: true, }
   
     this.vec = `play`
-    this.mode_direction = this.parent.rote_speed
+    this.mode_direction = this.get_speed()
   
     if(this.stopTime >= this.stepStartTime[index+1] - this.stepStartTime[index]){
       this.stopTime = 0
@@ -809,7 +813,7 @@ export class motionList{
   
     // this.animation(
     //   this.stopTime/1000,
-    //   this.stepStartTime[index+1]/1000, this.parent.rote_speed)
+    //   this.stepStartTime[index+1]/1000, this.get_speed())
     this.animationStart(this.mode_direction)
 
     this.animation_start_time = Date.now()
@@ -817,16 +821,14 @@ export class motionList{
     this.step_time_meter.animationPlay(this.stopTime, this.mode_direction)
   }
   reverse_btn_func(){
-    
-    
-    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.status())	return
     if(this.step_move) return
   
     const index = this.stepSkip[this.stepCount]
     if(index == -1) return {skip: true, }
   
     this.vec = `reverse`
-    this.mode_direction = -this.parent.rote_speed
+    this.mode_direction = -this.get_speed()
   
     if(this.stopTime <= 0){
       this.stopTime = this.stepStartTime[index+1] - this.stepStartTime[index]
@@ -840,21 +842,20 @@ export class motionList{
   
     // this.animation(
     //   this.stopTime/1000,
-    //   this.stepStartTime[index]/1000, this.parent.rote_speed)
+    //   this.stepStartTime[index]/1000, this.get_speed())
     this.animationStart(this.mode_direction)
       
     this.animation_start_time = Date.now()
-    this.stepAnimationStart(index, -this.parent.rote_speed)
-    this.step_time_meter.animationPlay(this.stopTime, -this.parent.rote_speed)
+    this.stepAnimationStart(index, -this.get_speed())
+    this.step_time_meter.animationPlay(this.stopTime, -this.get_speed())
   }
   async learning_btn_func(){
-    
+    if(!this.status() && !this.allow_practice())	return
     if(this.step_move) return
-    if(this.parent.cube_mode != "Execution" && this.parent.cube_mode != "learning") return
   
     const index = this.stepSkip[this.stepCount]
   
-    if(this.parent.cube_mode == "Execution"){
+    if(!this.allow_practice()){
   
       // this.full_cube.object3D.traverse((e)=>{
       //   if(e.type=="Group" && ( e.name=="fco" || e.name=="fce" || e.name=="fed")){
@@ -867,14 +868,14 @@ export class motionList{
   
       this.learning_btn.querySelector("p").textContent = '解説モードへ'
 
-      this.parent.dispCube.cube = this.Datas[this.groupRotesCube[index]]
+      this.dispCube.cube = this.Datas[this.groupRotesCube[index]]
       // cubeset(full_cube.object3D, this.dispCube.cube)
-      cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+      cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
   
-      this.parent.Mode_set("learning")
+      this.Change_Practice()
     }
-    else if(this.parent.cube_mode == "learning"){
-      this.parent.Mode_set("Execution")
+    else if(this.allow_practice()){
+      this.Change_Guide()
 
       this.ObjectManager.objects.handL.visible = true
       this.ObjectManager.objects.handR.visible = true
@@ -886,7 +887,7 @@ export class motionList{
   }
   async stepList_func(e){
     
-    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.status())	return
     if(this.step_move) return
   
     let newStep = -1
@@ -913,9 +914,11 @@ export class motionList{
   
     await this.stepChange(parseInt(newStep))
   }
-  execution_btn_func(){
-    if(this.parent.cube_mode !== "Execution")	return
-    if(this.step_move) return
+  dispose(){
+    if(!this.status())	return
+    if(this.step_move){
+      return false
+    }
   
     this.learning_btn.style.display = "none"
     
@@ -926,7 +929,6 @@ export class motionList{
     this.reverse_btn.removeEventListener("click", this.reverse_btn_func)
     this.learning_btn.removeEventListener("click", this.learning_btn_func)
     this.stepList.removeEventListener("click", this.stepList_func)
-    this.execution_btn.removeEventListener("click", this.execution_btn_func)
     this.AnimeManager.mixersName.cube.mixer.removeEventListener("finished", this.stepAnimationEnd)
 
     this.step_time_meter.dispose()
@@ -938,11 +940,12 @@ export class motionList{
     this.stepRmoveAnim()
     
     console.log("解説　終了")
-    this.parent.Execution_End()
+
+    return true
   }
   stepAnimationEnd(){
     
-    if(this.parent.cube_mode !== "Execution")	return
+    if(!this.status())	return
     if(!this.step_move) return
   
     const index = this.stepSkip[this.stepCount]

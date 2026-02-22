@@ -85,14 +85,25 @@ export class cubemrotate{
   new_move = null
   new_rad = null
 
-	constructor(_data = {scene: null, camOut: null, parent: null,
-      ObjectManager: null, AnimeManager: null, SceneManager: null}) {
+	constructor(_data = {
+      scene: null, camOut: null, dispCube: null,
+      ObjectManager: null, AnimeManager: null, SceneManager: null, status: null,
+			getCubeHolding: null, setCubeHolding: null,
+      getCubeMoveEnd: null, setCubeMoveEnd: null
+		}) {
 		this.scene = _data.scene
 		this.camOut = _data.camOut
-		this.parent = _data.parent
+		this.dispCube = _data.dispCube
     this.ObjectManager = _data.ObjectManager
     this.AnimeManager = _data.AnimeManager
     this.SceneManager =  _data.SceneManager
+    this.status = _data.status
+
+    this.getCubeHolding =  _data.getCubeHolding
+    this.setCubeHolding =  _data.setCubeHolding
+		
+    this.getCubeMoveEnd =  _data.getCubeMoveEnd
+    this.setCubeMoveEnd =  _data.setCubeMoveEnd
 		
     const geometry = new THREE.PlaneGeometry(10, 10, 4,4)
     const material = new THREE.MeshBasicMaterial({ 
@@ -146,12 +157,10 @@ export class cubemrotate{
   }
 	set mousePress(_m){
     this.#mousePress = _m
-    this.parent.cubeHolding = _m
     // cubeHolding  = true
   }
 	set touchPress(_m){
     this.#touchPress = _m
-    this.parent.cubeHolding = _m
   }
   get time(){
     return Date.now()
@@ -220,8 +229,8 @@ export class cubemrotate{
 
     if(!(parts_type === "ed" || parts_type === "ce" || parts_type === "co"))	return
 
-    const be = this.parent.dispCube.cube[posName[parts_type]].indexOf(_be)
-    const face = (_face + this.parent.dispCube.cube[vecName[parts_type]][be]) % vecCount[parts_type]
+    const be = this.dispCube.cube[posName[parts_type]].indexOf(_be)
+    const face = (_face + this.dispCube.cube[vecName[parts_type]][be]) % vecCount[parts_type]
     
     let text=`\nname [${partsNamt}] parts_type [${parts_type}] be [${be}] face [${face}]\n`
 
@@ -232,7 +241,7 @@ export class cubemrotate{
     this.anims = {}
     const _ani = [...this.moves, this.moves.map(e => move_reverse[e])].flat(1)
     _ani.forEach(e => {
-      this.anims[e] = cube_Full_Animation_Make(this.parent.dispCube.cube, e)
+      this.anims[e] = cube_Full_Animation_Make(this.dispCube.cube, e)
     })
 
     this.start_pos = null
@@ -312,13 +321,13 @@ export class cubemrotate{
 
     if(this.raycast_rotate_T && this.new_move !== null && this.new_move != move){
       this.AnimeManager.mixersName.cube.remove()
-      cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+      cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
       this.AnimeManager.mixersName.cube.set({animationData: this.anims[move], fps: 1, timeScale: rotaSpped})
       this.AnimeManager.mixersName.cube.showFrameAt({time: value})
     }
     else if(this.raycast_rotate_T && this.new_move === null){
       this.AnimeManager.mixersName.cube.remove()
-      cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+      cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
       this.AnimeManager.mixersName.cube.set({animationData: this.anims[move], fps: 1, timeScale: rotaSpped})
       this.AnimeManager.mixersName.cube.showFrameAt({time: value})
     }
@@ -339,22 +348,27 @@ export class cubemrotate{
       
       if(rad < 0.125){
         this.AnimeManager.mixersName.cube.play({timeScale: -rotaSpped})
-        this.parent.cubeMoveEnd = this.time + 1000 / rotaSpped
+        this.setCubeMoveEnd(this.time + 1000 / rotaSpped)
         return
       }
 
-			this.parent.dispCube.cube = this.parent.dispCube.cube.apply_move(moves[move])
+			this.dispCube.cube = this.dispCube.cube.apply_move(moves[move])
       this.AnimeManager.mixersName.cube.play({timeScale: rotaSpped})
-      this.parent.cubeMoveEnd = this.time + 1000 / rotaSpped
+      this.setCubeMoveEnd(this.time + 1000 / rotaSpped)
     }
   }
   mouseDown(e){
-    if(!this.Rotation) return
+    if(!this.status()) return
     if(e.target.tagName !== 'CANVAS') return
     if(this.mousePress || this.touchPress) return
 
+		if(this.getCubeHolding()){
+			console.log(`キューブ回転 マウス・タッチ キャンセル`)
+			return
+		}
+
     const time = this.time
-    if(time <= this.parent.cubeMoveEnd){
+    if(time <= this.getCubeMoveEnd()){
       console.log("キューブ回転 マウス キャンセル")
       return
     }
@@ -368,19 +382,26 @@ export class cubemrotate{
     this.parts = _parts.length > 0 ? _parts[0] : null
 
     if(this.parts === null) return
-    cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+
+    cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
     this.search_parts()	
     this.mousePress = true
+    this.setCubeHolding(true)
     this.mousePos = {x:e.offsetX , y:e.offsetY}
   }
   touchStart(e){
-    if(!this.Rotation) return
+    if(!this.status()) return
     if(e.target.tagName !== 'CANVAS') return
     if(this.mousePress || this.touchPress) return
     if(e.touches.length>1)  return
 
+		if(this.getCubeHolding()){
+			console.log(`キューブ回転 マウス・タッチ キャンセル`)
+			return
+		}
+
     const time = this.time
-    if(time <= this.parent.cubeMoveEnd){
+    if(time <= this.getCubeMoveEnd()){
       console.log("キューブ回転 タッチ キャンセル")
       return
     }
@@ -394,10 +415,12 @@ export class cubemrotate{
     this.parts = _parts.length > 0 ? _parts[0] : null
 
     if(this.parts === null) return
-    cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+
+    cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
     this.search_parts()	
     
     this.touchPress = true
+    this.setCubeHolding(true)
     this.touchId = e.touches[0].identifier
     
     this.mousePos = {x:e.touches[0].clientX , y:e.touches[0].clientY}
@@ -405,7 +428,10 @@ export class cubemrotate{
   mouseUp(e){
     // console.log(e.target)
     if(!this.mousePress)	return
+    
     this.mousePress = false
+      
+    this.setCubeHolding(false)
       
     this.Decision_rotate()
   }
@@ -416,12 +442,14 @@ export class cubemrotate{
       this.touchId = undefined
       this.touchPress = false
       
+      this.setCubeHolding(false)
+      
       this.Decision_rotate()
     }
   }
   mouseMove(e){
 		e.preventDefault()
-    if(!this.Rotation) return
+    if(!this.status()) return
     if(e.target.tagName !== 'CANVAS') return
     if(!this.mousePress)	return
     
@@ -440,7 +468,7 @@ export class cubemrotate{
   }
   touchMove(e){
 		e.preventDefault()
-    if(!this.Rotation) return
+    if(!this.status()) return
     if(!this.touchPress)	return
     if(e.changedTouches[0].identifier !==this.touchId) return
     // console.log("touchmove")

@@ -1,19 +1,23 @@
 import {
-  State, set_color_data, hitObjecet
+  State, set_color_data, hitObjecet, cubeset
 } from './solve.js'
 
 export class colorinput{
   Colorset = false
 
-	constructor(_data = {scene: null, disp: null, camOut: null, parent: null,
-      ObjectManager: null, AnimeManager: null, SceneManager: null}) {
+	constructor(_data = {scene: null, disp: null, camOut: null,
+      ObjectManager: null, AnimeManager: null, SceneManager: null, status: null, Color_completion: null}) {
 		this.scene = _data.scene
 		this.disp = _data.disp
 		this.camOut = _data.camOut
-    this.parent = _data.parent
+
     this.ObjectManager = _data.ObjectManager
     this.AnimeManager = _data.AnimeManager
     this.SceneManager =  _data.SceneManager
+
+    this.status =  _data.status
+    this.Color_completion =  _data.Color_completion
+    
 
 		this.mousePress = false
 		this.touchPress = false
@@ -21,7 +25,6 @@ export class colorinput{
     this.choiceColor = undefined
     this.check_list = undefined
     this.color_index = undefined
-
 
     this.menu = document.createElement('div')
     this.menu.id = "color-menu"
@@ -45,15 +48,27 @@ export class colorinput{
     this.mouseDown = this.mouseDown.bind(this)
 		this.scene.addEventListener('mousedown', this.mouseDown)
 
+    this.mouseMove = this.mouseMove.bind(this)
+		this.scene.addEventListener('mousemove', this.mouseMove)
+
+    this.mouseUp = this.mouseUp.bind(this)
+		this.scene.addEventListener('mouseup', this.mouseUp)
+
     this.touchStart = this.touchStart.bind(this)
 		this.scene.addEventListener('touchstart', this.touchStart, { passive: true })
     
+    this.touchMove = this.touchMove.bind(this)
+		this.scene.addEventListener('touchmove', this.touchMove, { passive: true })
+
     this.touchEnd = this.touchEnd.bind(this)
 		this.scene.addEventListener('touchend', this.touchEnd)
 
     this.click = this.click.bind(this)
     this.menu.addEventListener("click", this.click)
 
+    
+    cubeset(this.ObjectManager.objects.cube, new State())
+    this.Intiset()
   }
   Check_pos(type = undefined, index = undefined){
     const CTS={
@@ -297,15 +312,15 @@ export class colorinput{
       return
     }
     // console.log(parts)
-    const choice_parts = this.parts.object.name
+    const choice_parts = parts.object.name
 
-  //  console.log(`search_part ${partsNamt} name ${this.parts.object.name}`)
-  //  console.log(this.parts)
+  //  console.log(`search_part ${partsNamt} name ${parts.object.name}`)
+  //  console.log(parts)
 
 
     const parts_type = choice_parts.slice(0,2)
     const be = parseInt(choice_parts.slice(2,4))
-    const num = parseInt(this.parts.object.name.at(-1))
+    const num = parseInt(parts.object.name.at(-1))
 
     if(!(parts_type === "ed" || parts_type === "co"))	return
     if(isNaN(num))	return
@@ -322,7 +337,7 @@ export class colorinput{
       this.cData.count[this.cData[face.type[0]][face.Pindex][face.Findex]] += 1
 
     
-    const f = this.parts.object
+    const f = parts.object
     let Check_ans = false
     f.material.color = set_color_data[this.choiceColor]
     // console.log(`type [${face.type[0]}] Pin [${[face.Pindex]}] Fin [${face.Findex}]`)
@@ -337,8 +352,8 @@ export class colorinput{
     if(Check_ans === false) return
 
     // this.cube_mode="stay"
-    this.parent.Color_completion(Check_ans)
-    this.menu.style.display = "none"
+    this.Color_completion(Check_ans)
+    // this.menu.style.display = "none"
   }
   Intiset(){
     this.menu.style.display = "flex"
@@ -380,7 +395,7 @@ export class colorinput{
   XX (r,x,y) {return x*Math.cos(r)-y*Math.sin(r)}
   YY (r,x,y) {return x*Math.sin(r)+y*Math.cos(r)}
   mouseDown(e){
-    if(!this.Colorset) return
+    if(!this.status()) return
     if(e.target.tagName !== 'CANVAS') return
     if(this.touchPress) return
     
@@ -391,15 +406,34 @@ export class colorinput{
       [this.ObjectManager.objects.cube]
     )
 
-    this.parts = _parts.length > 0 ? _parts[0] : null
+    const part = _parts.length > 0 ? _parts[0] : null
 
-    if(this.parts === null) return
+    if(part === null) return
 
     this.mousePress = true
-    this.Color_set(this.parts)
+    this.Color_set(part)
+  }
+  mouseMove(e){
+    if(!this.status()) return
+    if(e.target.tagName !== 'CANVAS') return
+    if(this.touchPress) return
+    if(!this.mousePress) return
+    
+    const _parts = hitObjecet(
+      {x:e.offsetX , y:e.offsetY},
+			this.scene,
+      this.camOut,
+      [this.ObjectManager.objects.cube]
+    )
+
+    const part = _parts.length > 0 ? _parts[0] : null
+
+    if(part === null) return
+
+    this.Color_set(part)
   }
   touchStart(e){
-    if(!this.Colorset) return
+    if(!this.status()) return
     if(e.target.tagName !== 'CANVAS') return
     if(this.mousePress || this.touchPress) return
 
@@ -412,13 +446,41 @@ export class colorinput{
       [this.ObjectManager.objects.cube]
     )
 
-    this.parts = _parts.length > 0 ? _parts[0] : null
+    const part = _parts.length > 0 ? _parts[0] : null
 
-    if(this.parts === null) return
+    if(part === null) return
 
     this.touchPress = true
     this.touchId = e.touches[0].identifier
-    this.Color_set(this.parts)
+    this.Color_set(part)
+  }
+  touchMove(e){
+    if(!this.status()) return
+    if(e.target.tagName !== 'CANVAS') return
+    if(this.mousePress) return
+    if(!this.touchPress) return
+
+    if(e.touches.length>1)  return
+
+    const _parts = hitObjecet(
+      {x:e.touches[0].clientX , y:e.touches[0].clientY},
+			this.scene,
+      this.camOut,
+      [this.ObjectManager.objects.cube]
+    )
+
+    const part = _parts.length > 0 ? _parts[0] : null
+
+    if(part === null) return
+
+    console.log("asdasd")
+
+    this.Color_set(part)
+  }
+  mouseUp(e){
+    if(!this.mousePress)	return
+
+    this.mousePress = false
   }
   touchEnd(e){
     if(!this.touchPress)	return
@@ -443,9 +505,12 @@ export class colorinput{
     document.getElementById('main-display').removeChild(this.menu)
 
 		this.scene.removeEventListener('mousedown', this.mouseDown)
-		this.scene.removeEventListener('touchstart', this.touchStart)
+		this.scene.removeEventListener('mousemove', this.mouseMove)
+		this.scene.removeEventListener('mouseup', this.mouseUp)
+
+		this.scene.removeEventListener('touchstart', this.touchStart)    
+		this.scene.removeEventListener('touchmove', this.touchMove)
 		this.scene.removeEventListener('touchend', this.touchEnd)
-    // console.log(this.menu.removeEventListener("click", this.touchEnd))
   }
 }
 

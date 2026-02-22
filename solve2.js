@@ -41,13 +41,24 @@ export class presskeyboard{
 		'KeyM':'f',
 		'KeyU':'b',
 	}
-	constructor(_data = {parent: null,
-      ObjectManager: null, AnimeManager: null, SceneManager: null}) {
+	constructor(_data = {
+		  dispCube: null,
+      ObjectManager: null, AnimeManager: null, SceneManager: null, status: null,
+			getCubeHolding: null, setCubeHolding: null,
+      getCubeMoveEnd: null, setCubeMoveEnd: null
+		}) {
 
-    this.parent = _data.parent
+    this.dispCube = _data.dispCube
     this.ObjectManager = _data.ObjectManager
     this.AnimeManager = _data.AnimeManager
     this.SceneManager =  _data.SceneManager
+		this.status = _data.status
+		
+    this.getCubeHolding =  _data.getCubeHolding
+    this.setCubeHolding =  _data.setCubeHolding
+		
+    this.getCubeMoveEnd =  _data.getCubeMoveEnd
+    this.setCubeMoveEnd =  _data.setCubeMoveEnd
 
 		this.keyDown = this.keyDown.bind(this)
 		window.addEventListener("keydown", this.keyDown)
@@ -64,7 +75,7 @@ export class presskeyboard{
 			this.key_ples[e.code] = false
 	}
 	keyDown(e){
-		if(!this.Rotation) return
+		if(!this.status()) return
 		// if(e.code == "KeyP"){
 		// 	const camera = document.getElementById('camOut').components["sync-user"]
 		// 	camera.load()
@@ -82,25 +93,25 @@ export class presskeyboard{
 		if(e.shiftKey) sulb += "'"
 		else if(this.Space_key) sulb += "2"
 		
-		if(this.parent.cubeHolding){
+		if(this.getCubeHolding()){
 			console.log(`キューブ回転 マウス・タッチ キャンセル`)
 			return
 		}
 		
 		const time = this.time
-    if(time <= this.parent.cubeMoveEnd){
+    if(time <= this.getCubeMoveEnd()){
 			console.log("キューブ回転 キーボード キャンセル")
 			return
 		}
 
-		const anims = cube_Full_Animation_Make(this.parent.dispCube.cube, sulb)
-
-		this.parent.dispCube.cube.set(this.parent.dispCube.cube.apply_move(moves[sulb]))
-
-		this.parent.cubeMoveEnd = this.time + 1000 / rotaSpped
+		const anims = cube_Full_Animation_Make(this.dispCube.cube, sulb)
+		
+		this.dispCube.cube.set(this.dispCube.cube.apply_move(moves[sulb]))
+		
+		this.setCubeMoveEnd(this.time + 1000 / rotaSpped)
 		
 		this.AnimeManager.mixersName.cube.remove()
-		cubeset(this.ObjectManager.objects.cube, this.parent.dispCube.cube)
+		cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
 		this.AnimeManager.mixersName.cube.set({animationData: anims, fps: 1, timeScale: rotaSpped})
 		this.AnimeManager.mixersName.cube.action.paused = false
 	}

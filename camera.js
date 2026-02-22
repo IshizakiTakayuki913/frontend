@@ -12,14 +12,14 @@ export class camera {
 	#angle = {x: 0, y:0, z: 0 ,r: 5}
 	// #angle = new THREE.Rotation()
 	
-	constructor(_data = {scene: null, camOut: null, parent: null,
-      ObjectManager: null, AnimeManager: null, SceneManager: null}) {
+	constructor(_data = {scene: null, camOut: null,
+      ObjectManager: null, AnimeManager: null, SceneManager: null, status: null}) {
 		this.scene = _data.scene
 		this.camOut = _data.camOut
-		this.parent = _data.parent
     this.ObjectManager = _data.ObjectManager
     this.AnimeManager = _data.AnimeManager
     this.SceneManager =  _data.SceneManager
+    this.status =  _data.status
 		
 		this.mousePress = false
 		this.touchPress = false
@@ -83,7 +83,7 @@ export class camera {
 		// this.syncuser.manual([...this.camOut.position])
 	}
 	mouseDown(e){
-		if(!this.Viewpoint) return
+		if(!this.status()) return
 		if(e.target.nodeName !== 'CANVAS') return
 
 		const point = {
@@ -112,7 +112,7 @@ export class camera {
 	}
 	mouseMove(e){
 		e.preventDefault()
-		if(!this.Viewpoint) return
+		if(!this.status()) return
 		if(!this.mousePress)	return
 		// console.log(`target [${e.target.nodeName}] current [${e.currentTarget.tagName}]`)
 		
@@ -135,7 +135,7 @@ export class camera {
 		this.mousePress=false
 	}
 	touchStart(e){
-		if(!this.Viewpoint) return
+		if(!this.status()) return
 		if(e.target.nodeName !== 'CANVAS') return
 
 		const point = {
@@ -174,7 +174,7 @@ export class camera {
 	}
 	touchMove(e){
 		e.preventDefault()
-		if(!this.Viewpoint) return
+		if(!this.status()) return
 		if(!this.touchPress)	return
 
 		if(this.touchMode === "oun"){
@@ -222,15 +222,11 @@ export class camera {
 		this.scene.removeEventListener('mousedown', this.mouseDown)
 		document.removeEventListener('mousemove', this.mouseMove)
 		document.removeEventListener('mouseup', this.mouseUp)
+
 		this.scene.removeEventListener('touchstart', this.touchStart)
 		this.scene.removeEventListener('touchmove', this.touchMove)
 		this.scene.removeEventListener('touchend', this.touchEnd)
+
 		this.scene.removeEventListener('wheel', this.wheel)
 	}
 }
-
-// html  three.jsなどの公式のライブラリとindex.jsを読み込む
-//  |-  index.js  ほかの.jsファイルを利用する
-//         |-  camera.js
-//         |-  roattion.js
-
