@@ -375,7 +375,7 @@ export function cube_Full_Animation_Make(Datas, clip){
 }
 
 
-function modelIndex(type, _id) {
+export function modelIndex(type, _id) {
 		if(type=="ce")
 				return _id
 		else if(type=="co")

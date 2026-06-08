@@ -6,6 +6,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 
+import { SobelOperatorShader } from 'three/addons/shaders/SobelOperatorShader.js';
 
 export class SceneManager{
   lights = []
@@ -69,13 +70,22 @@ export class SceneManager{
     const outlinePass = new OutlinePass(new THREE.Vector2(2, 1), scene, camera)
     outlinePass.edgeStrength=5
     outlinePass.edgeGlow=0
-    outlinePass.edgeThickness=0.3
+    outlinePass.edgeThickness=1
     outlinePass.visibleEdgeColor = new THREE.Color(1,0,1)
     outlinePass.hiddenEdgeColor = new THREE.Color(1,0,1)
     outlinePass.selectedObjects = []
 
     composer.addPass(outlinePass)
     
+    // const outlinePass2 = new OutlinePass(new THREE.Vector2(1, 2), scene, camera)
+    // outlinePass2.edgeStrength=5
+    // outlinePass2.edgeGlow=0
+    // outlinePass2.edgeThickness=1
+    // outlinePass2.visibleEdgeColor = new THREE.Color(1,1,0)
+    // outlinePass2.hiddenEdgeColor = new THREE.Color(1,1,0)
+    // outlinePass2.selectedObjects = []
+
+    // composer.addPass(outlinePass2)
     
     // ... 
     // ★ FXAA Passを追加 ★
@@ -89,6 +99,16 @@ export class SceneManager{
 
     composer.addPass(new OutputPass());
 
+    // 追加
+    // ... RenderPassの後に配置 ...
+    // const effectSobel = new ShaderPass(SobelOperatorShader);
+    // effectSobel.uniforms['resolution'].value.set(
+    //     window.innerWidth * window.devicePixelRatio,
+    //     window.innerHeight * window.devicePixelRatio
+    // );
+    // composer.addPass(effectSobel);
+    // 追加
+
     this.scene = scene
     this.canvas = canvas
     this.camera = camera
@@ -97,6 +117,7 @@ export class SceneManager{
     this.composer = composer
     this.renderPass = renderPass
     this.outlinePass = outlinePass
+    // this.outlinePass2 = outlinePass2
     
     this.mixers = mixers
 
