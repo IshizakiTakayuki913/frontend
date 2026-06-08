@@ -9,17 +9,21 @@ export class camera {
 	Viewpoint = false
 	scene = null
 	camOut = null
+	weelTime = 0
 	#angle = {x: 0, y:0, z: 0 ,r: 5}
 	// #angle = new THREE.Rotation()
 	
 	constructor(_data = {scene: null, camOut: null,
-      ObjectManager: null, AnimeManager: null, SceneManager: null, status: null}) {
+      ObjectManager: null, AnimeManager: null, SceneManager: null, status: null,
+			callback: null
+		}) {
 		this.scene = _data.scene
 		this.camOut = _data.camOut
     this.ObjectManager = _data.ObjectManager
     this.AnimeManager = _data.AnimeManager
     this.SceneManager =  _data.SceneManager
     this.status =  _data.status
+    this.callback =  _data.callback
 		
 		this.mousePress = false
 		this.touchPress = false
@@ -74,7 +78,7 @@ export class camera {
 
 		this.syncuser.manual(this.#angle)
 
-		
+		this.callback(this.#angle)
 		// this.camOut.position.x = Math.sin(this.#angle.y) * Math.cos(this.#angle.x)
 		// this.camOut.position.y = Math.sin(-this.#angle.x)
 		// this.camOut.position.z = Math.cos(this.#angle.y) * Math.cos(this.#angle.x)
@@ -104,7 +108,7 @@ export class camera {
 		if(this.touchPress || this.touchMode !== undefined){
 			this.touchPress =false
 			this.touchMode = undefined
-			console.log("touchPres")
+			// console.log("touchPres")
 		}
 
 		this.mousePos = point
@@ -133,6 +137,14 @@ export class camera {
 		// console.log(e.target)
 		if(!this.mousePress)	return
 		this.mousePress=false
+
+		const event = new CustomEvent("tutorial", {
+			detail: {
+				type: "user action",
+				name: "view-rotation" 
+			}
+		});
+		window.dispatchEvent(event);
 	}
 	touchStart(e){
 		if(!this.status()) return
@@ -203,10 +215,28 @@ export class camera {
 	touchEnd(e){
 		if(!this.touchPress)	return
 		// console.log(e)
-		if(e.touches.length>0)	this.touchMode = "none"
+		if(e.touches.length>0){
+			this.touchMode = "none"
+
+			const event = new CustomEvent("tutorial", {
+				detail: {
+					type: "user action",
+					name: "wheel" 
+				}
+			});
+			window.dispatchEvent(event);
+		}
 		else {
 			this.touchPress = false
 			this.touchMode = null
+
+			const event = new CustomEvent("tutorial", {
+				detail: {
+					type: "user action",
+					name: "view-rotation" 
+				}
+			});
+			window.dispatchEvent(event);
 		}
 	}
 	wheel(e){
@@ -216,7 +246,19 @@ export class camera {
 		d += e.deltaY/200
 		d = Math.max(d,0)
 		this.angle = {r: d}
+
+		const _time = new Date().getTime()
+		if(this.weelTime >= _time)	return
 		
+		const event = new CustomEvent("tutorial", {
+			detail: {
+				type: "user action",
+				name: "wheel" 
+			}
+		});
+		window.dispatchEvent(event);
+		
+		this.weelTime = _time + 1000
 	}
 	dispose(){
 		this.scene.removeEventListener('mousedown', this.mouseDown)

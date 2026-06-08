@@ -1,6 +1,6 @@
 
 import {
-  State, cubeset, wait
+  State, cubeset, wait, 
 } from './solve.js'
 
 import { meter } from './meter.js'
@@ -43,7 +43,7 @@ export class motionList{
     L_hand = null, R_hand = null, frameObj = null, dispCube = null,
     ObjectManager = null, AnimeManager = null, SceneManager = null,
     status = null, allow_practice= null, Change_Guide = null, Change_Practice = null,
-    get_speed = null
+    get_speed = null, set_ano = null, callback = null
   } = {}  ){
     // console.log({model_centers, bone_centers})
 
@@ -61,6 +61,8 @@ export class motionList{
     this.Change_Guide = Change_Guide
     this.Change_Practice = Change_Practice
     this.get_speed = get_speed
+    this.set_ano = set_ano
+    this.callback = callback
 
     this.mew_motion = true
     this.animation_start_time = undefined
@@ -392,7 +394,24 @@ export class motionList{
   }
   async stepChange(newStep){
  // console.log({newStep})
+    
+    const f = [
+      ["ed10"], ["ed09"], ["ed08"], ["ed11"],
+      ["co06"], ["co05"], ["co04"], ["co07"],
+      ["ed02"], ["ed01"], ["ed00"], ["ed03"],
+      ["ed04"], ["co01"], ["ed05"], ["co02"],
+    ]
 
+    const posName = {
+      "ce": "c",
+      "co": "cp",
+      "ed": "ep",
+    }
+    this.set_ano(
+      f[newStep][0].slice(0,2), 
+      this.Datas.at(-1)[posName[f[newStep][0].slice(0,2)]][parseInt(f[newStep][0].slice(-2))]
+    )
+    
     if(newStep == 16){
       // console.log("rote_re_start finish")
       return {skip: true, check: "over"}
@@ -657,6 +676,7 @@ export class motionList{
       this.stepAnimationPointSet(index, Data.value)
       // this.stepAnimationPointSet(index, Data.value - this.stepStartTime[index])
       this.step_move = false    
+      clearInterval(this.ano_upDate_id)
       // this.meterBar.classList.remove("meter-animating")
       this.frame(Data.value/1000)
       return
@@ -666,6 +686,8 @@ export class motionList{
 
     this.stepAnimationPause(index)
     this.stepAnimationPointSet(index, Data.value)
+
+    this.callback()
     // this.stepAnimationPointSet(index, Data.value - this.stepStartTime[index])
   }
   frameObjSet(index){
@@ -785,6 +807,7 @@ export class motionList{
   
     this.remove_Animation()
     this.step_move = false
+    clearInterval(this.ano_upDate_id)
   
     this.stepAnimationPause(index)
     this.stepAnimationPointSet(index,value)
@@ -810,6 +833,8 @@ export class motionList{
     this.stepAnimationPointSet(index,this.stopTime)
   
     this.step_move = true
+    
+    this.ano_upDate_id = setInterval(this.callback, 30)
   
     // this.animation(
     //   this.stopTime/1000,
@@ -960,6 +985,9 @@ export class motionList{
   
     // console.log({func: `animation-finished`, _index})
     this.step_move = false
+
+    clearInterval(this.ano_upDate_id)
+
     this.stopTime = this.stepStartTime[_index] - this.stepStartTime[index]
     this.step_time_meter.animationPause(this.stopTime)
   }

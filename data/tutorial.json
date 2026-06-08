@@ -1,0 +1,375 @@
+{
+  "tutorials": [
+    {
+      "toEvents" : [0],
+      "anno": {
+        "id": "first-explanation",
+        "pos": {
+          "parentElement": "#annotation-svg",
+          "parentPos": {
+            "w": 0.5,
+            "h": 0.5
+          },
+          "myPos": {
+            "w": 0.5,
+            "h": 0.5
+          }
+        },
+        "width": 500,
+        "height": 300,
+        "text": "ルービックキューブ学習支援ソフトウェア\nルービックキューブの揃え方を理解しよう"
+      }
+    },
+    {
+      "toEvents" : [1],
+      "anno": {
+        "id": "cube-rotation",
+        "pos": {
+          "parentElement": "#main-canvas",
+          "parentPos": {
+            "w": 0.7,
+            "h": 0.9
+          },
+          "myPos": {
+            "w": 0,
+            "h": 0
+          }
+        },
+        "width": 300,
+        "height": 150,
+        "text": "1. キューブを掴んで回してみよう",
+        "line": {
+          "endElement": "#main-canvas",
+          "endPos": {
+            "w": 0.5,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.4,
+            "h": 0
+          },
+          "headType": "circlehead"
+        }
+      }
+    },
+    {
+      "toEvents" : [2],
+      "anno": {
+        "id": "view-rotation",
+        "pos": {
+          "parentElement": "#main-canvas",
+          "parentPos": {
+            "w": 0.2,
+            "h": 1.1
+          },
+          "myPos": {
+            "w": 0,
+            "h": 0
+          }
+        },
+        "width": 300,
+        "height": 150,
+        "text": "2. 背景の黒い場所を掴んで回してみよう",
+        "line": {
+          "endElement": "#main-canvas",
+          "endPos": {
+            "w": 0.9,
+            "h": 0.6
+          },
+          "startPos": {
+            "w": 1,
+            "h": 0.2
+          },
+          "headType": "circlehead"
+        }
+      }
+    },
+    {
+      "toEvents" : [3],
+      "anno": {
+        "id": "wheel",
+        "pos": {
+          "parentElement": "#main-canvas",
+          "parentPos": {
+            "w": 0.2,
+            "h": 1.1
+          },
+          "myPos": {
+            "w": 0,
+            "h": 0
+          }
+        },
+        "width": 300,
+        "height": 150,
+        "text": "3. キューブの上でマウスのホイールを回してみよう",
+        "line": {
+          "endElement": "#main-canvas",
+          "endPos": {
+            "w": 0.9,
+            "h": 0.6
+          },
+          "startPos": {
+            "w": 1,
+            "h": 0.2
+          },
+          "headType": "circlehead"
+        }
+      }
+    },
+    {
+      "toEvents" : [4, 5],
+      "anno": {
+        "id": "color-set",
+        "pos": {
+          "parentElement": ".function-color-set-buttont",
+          "parentPos": {
+            "w": -1,
+            "h": 1
+          },
+          "myPos": {
+            "w": 1,
+            "h": 0
+          }
+        },
+        "width": 300,
+        "height": 150,
+        "text": "4. 色入力機能を使ってみよう",
+        "line": {
+          "endElement": ".function-color-set-buttont",
+          "endPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.4,
+            "h": 0
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    {
+      "toEvents" : [6],
+      "anno": {
+        "id": "color-select",
+        "pos": {
+          "parentElement": "#color-menu",
+          "parentPos": {
+            "w": 0.6,
+            "h": 1.5
+          },
+          "myPos": {
+            "w": 0,
+            "h": 0
+          }
+        },
+        "width": 300,
+        "height": 150,
+        "text": "5. 入力する色を選ぶ",
+        "line": {
+          "endElement": "#color-menu",
+          "endPos": {
+            "w": 0.3,
+            "h": 1
+          },
+          "startPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    {
+      "toEvents" : [7],
+      "anno": {
+        "id": "color-paint",
+        "pos": {
+          "parentElement": "#color-menu",
+          "parentPos": {
+            "w": 1,
+            "h": 1.5
+          },
+          "myPos": {
+            "w": 0.5,
+            "h": 0
+          }
+        },
+        "width": 300,
+        "height": 150,
+        "text": "7. キューブの面をクリックする",
+        "line": {
+          "endElement": "#main-canvas",
+          "endPos": {
+            "w": 0.5,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.7,
+            "h": 0
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    {
+      "toEvents" : [8, 9, 10],
+      "anno": {
+        "id": "color-set-break",
+        "pos": {
+          "parentElement": "#main-canvas",
+          "parentPos": {
+            "w": 1,
+            "h": 1
+          },
+          "myPos": {
+            "w": 0.5,
+            "h": -0.1
+          }
+        },
+        "width": 300,
+        "height": 150,
+        "text": "8. このまますべての面に色を入力すると自由に回せるようになる\n途中でやめるときは色入力のボタンを押すことで終了できる",
+        "line": {
+          "endElement": ".function-color-set-buttont",
+          "endPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.4,
+            "h": 0
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    {
+      "toEvents" : [11],
+      "anno": {
+        "id": "calculation-function",
+        "pos": {
+          "parentElement": "#main-canvas",
+          "parentPos": {
+            "w": 1,
+            "h": 1
+          },
+          "myPos": {
+            "w": 1.2,
+            "h": 1.1
+          }
+        },
+        "width": 300,
+        "height": 150,
+        "text": "9. 解説機能をつかっていみる",
+        "line": {
+          "endElement": ".function-calculation-set-buttont",
+          "endPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.4,
+            "h": 0
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    {
+      "toEvents" : [12,13],
+      "anno": {
+        "id": "loading",
+        "pos": {
+          "parentElement": "#annotation-svg",
+          "parentPos": {
+            "w": 0.5,
+            "h": 1
+          },
+          "myPos": {
+            "w": 0.5,
+            "h": 1.3
+          }
+        },
+        "width": 300,
+        "height": 150,
+        "text": "9. 解説機能をつかっていみる"
+      }
+    }
+  ],
+  "events": [
+    {
+      "type": "annotation click",
+      "nextTutorialId": 1
+    },
+    {
+      "type": "user action",
+      "name": "cube-rotation",
+      "nextTutorialId": 2,
+      "count": 2
+    },
+    {
+      "type": "user action",
+      "name": "view-rotation",
+      "nextTutorialId": 3,
+      "count": 2
+    },
+    {
+      "type": "user action",
+      "name": "wheel",
+      "nextTutorialId": 4,
+      "count": 2
+    },
+    {
+      "type": "function click",
+      "name": "color-set",
+      "nextTutorialId": 5
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 8
+    },
+    {
+      "type": "user action",
+      "name": "color-select",
+      "nextTutorialId": 6,
+      "count": 1
+    },
+    {
+      "type": "user action",
+      "name": "color-paint",
+      "nextTutorialId": 7,
+      "count": 1
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": null
+    },
+    {
+      "type": "function click",
+      "name": "color-set-break",
+      "nextTutorialId": 8
+    },
+    {
+      "type": "user action",
+      "name": "color-set-completion",
+      "nextTutorialId": 8,
+      "count": 1
+    },
+    {
+      "type": "function click",
+      "name": "calculation",
+      "nextTutorialId": 9
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": null
+    },
+    {
+      "type": "user action",
+      "name": "calculation-response-completion",
+      "nextTutorialId": 10,
+      "count": 1
+    }
+  ]
+}

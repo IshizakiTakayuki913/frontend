@@ -355,6 +355,14 @@ export class cubemrotate{
 			this.dispCube.cube = this.dispCube.cube.apply_move(moves[move])
       this.AnimeManager.mixersName.cube.play({timeScale: rotaSpped})
       this.setCubeMoveEnd(this.time + 1000 / rotaSpped)
+
+      const event = new CustomEvent("tutorial", {
+        detail: {
+          type: "user action",
+          name: "cube-rotation"
+        }
+      });
+      window.dispatchEvent(event);
     }
   }
   mouseDown(e){
@@ -450,15 +458,27 @@ export class cubemrotate{
   mouseMove(e){
 		e.preventDefault()
     if(!this.status()) return
-    if(e.target.tagName !== 'CANVAS') return
+    // if(e.target.tagName !== 'CANVAS') return
     if(!this.mousePress)	return
     
     const _parts = hitObjecet(
-      {x:e.offsetX , y:e.offsetY},
+      {
+        x:e.clientX - this.scene.getBoundingClientRect().left,
+        y:e.clientY - this.scene.getBoundingClientRect().top
+      },
 			this.scene,
       this.camOut,
       [this.tile]
     )
+    // const _parts = hitObjecet(
+    //   {
+    //     x:e.offsetX, 
+    //     y:e.offsetY
+    //   },
+		// 	this.scene,
+    //   this.camOut,
+    //   [this.tile]
+    // )
 
     this.tilePos = _parts.length > 0 ? _parts[0] : null
 
@@ -474,11 +494,20 @@ export class cubemrotate{
     // console.log("touchmove")
     
     const _parts = hitObjecet(
-      {x:e.changedTouches[0].clientX , y:e.changedTouches[0].clientY},
+      {
+        x:e.changedTouches[0].clientX - this.scene.getBoundingClientRect().left,
+        y:e.changedTouches[0].clientY - this.scene.getBoundingClientRect().top
+      },
 			this.scene,
       this.camOut,
       [this.tile]
     )
+    // const _parts = hitObjecet(
+    //   {x:e.changedTouches[0].clientX , y:e.changedTouches[0].clientY},
+		// 	this.scene,
+    //   this.camOut,
+    //   [this.tile]
+    // )
 
     this.tilePos = _parts.length > 0 ? _parts[0] : null
 

@@ -340,6 +340,15 @@ export class colorinput{
     const f = parts.object
     let Check_ans = false
     f.material.color = set_color_data[this.choiceColor]
+
+    const event = new CustomEvent("tutorial", {
+			detail: {
+				type: "user action",
+				name: "color-paint" 
+			}
+		});
+		window.dispatchEvent(event);
+
     // console.log(`type [${face.type[0]}] Pin [${[face.Pindex]}] Fin [${face.Findex}]`)
     // console.log(this.cData)
 
@@ -500,6 +509,14 @@ export class colorinput{
       this.menu.children[id].classList.add("choice-color")
       this.choiceColor = id
     }
+
+		const event = new CustomEvent("tutorial", {
+			detail: {
+				type: "user action",
+				name: "color-select" 
+			}
+		});
+		window.dispatchEvent(event);
   }
   dispose(){
     document.getElementById('main-display').removeChild(this.menu)

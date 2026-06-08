@@ -26,6 +26,7 @@ body {
 	left: 0;
 	height: 60%;
 	width: 70%;
+	z-index: 10;
 	/* max-height: 400px; */
 	/* max-width: ; */
 	/* margin: 2vmin; */
@@ -68,26 +69,25 @@ a-scene {
 	left: 10px;
 	height: 15vmin;
 	width: 15vmin;
-	z-index: 3;
   overflow: hidden;    /* 中のスクロールを非表示 */
 	border: none;
 	background: #00000000;
+	pointer-events: none; /* 下のキューブを触れるようにする */
 }
 
 .sulves-map {
 	position: absolute;
-	z-index: 5;
 	background: #000000;
 	left: 0;
 	bottom: 0;
 	width: 70%;
 	height: 40%;
+	z-index: 10;
   /* resize: both; */
 }
 
 .btn-div {
 	position: absolute;
-	z-index: 5;
 	background: unset;
 	left: calc(0);
 	right: auto;
@@ -152,7 +152,6 @@ a-scene {
 
 .step-meter {
 	position: absolute;
-	z-index: 5;
 	background: unset;
 	left: calc((100% - 90%) / 2);
 	right: auto;
@@ -172,20 +171,7 @@ a-scene {
 	margin: 0.2em 5% 0.2em 0%;
 	background: #b5b8b2;
 }
-
-.root-menu .meter-out::after{
-	content: attr(data-value);
-	color: #fff;
-	/* background: #0d4eff; */
-	display: block;
-	position: absolute;
-	right: calc(-1.1em);
-	translate: 100% 0;
-	width: 30%;
-	height: 100%;
-}
-
-
+/* 
 .pointer {
 	position: absolute;
 	z-index: 5;
@@ -195,7 +181,7 @@ a-scene {
 	width: 4vmin;
 	height: 4vmin;
 	border-radius: 50%;
-}
+} */
 
 
 .list {
@@ -256,7 +242,7 @@ a-scene {
 	height: 100%;
 	background: #374eff;
 	transition: all none linear;
-	z-index: -1;
+	/* z-index: -1; */
 }
 
 .img-div-back-two{
@@ -299,24 +285,6 @@ a-scene {
 	background: rgb(0 246 255);
 }
 
-.load-icon{
-	position: absolute;
-	display: none;
-	left: 50%;
-	top: 50%;
-	translate: -50% -50%;
-	z-index: 50;
-}
-
-.rotate-ani {
-	animation: r1 1s linear infinite;
-}
-
-@keyframes r1 {
-	0%   { transform: rotate(0deg); }
-	100% { transform: rotate(360deg); }
-}
-
 .un-pointer-events{
 	pointer-events: none;
 	/* -webkit-touch-callout: none;
@@ -329,7 +297,6 @@ a-scene {
 
 
 .color-menu-bar {
-	z-index: 10;
 	position: absolute;
 	translate: -50% -1vmin;
 	left: 50%;
@@ -362,89 +329,69 @@ a-scene {
 	padding-left: 5%;
  } */
 
-.root-menu {
-	position: absolute;
-	display: flex;
-  flex-flow: column;
-	/* height: 30%; */
-	width: 30%;
-	top: 0;
-	right: 0;
-	background: #363664;
-	padding: 10px 0 0 10px;
-	z-index: 20;
-}
-
-
-/* .root-menu div{
-	transition: all 1s ease-in-out;
-} */
-
-.root-menu p {
-	color: #fff;
-	margin: unset;
-	pointer-events: none;
-	/* -webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none; */
-	/* display: inline; */
-}
-
-.root-menu button {
-	margin: unset;
-	border: unset;
-	padding: unset;
-	/* -webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none; */
-	/* display: inline; */
-}
-/* .root-menu p #text{
-	font-size: 1.em;
-} */
-
-/* .root-menu button {
-	padding: unset;
-} */
-
-/* .root-menu div :not(.scroll-folder){
-	height: auto;
-	max-height: 250px;
-	transition: max-height .5s linear 0s;
-	overflow: hidden;
-} */
-
-/* .scroll-folder{
-	width: 100%;
-	height: 100%;
-	overflow: scroll;
-	scroll-snap-type: y mandatory;
-}
-.scroll-folder::-webkit-scrollbar{
-  display: none;
-} */
-
-
 .folder { 
 	width: 100%;
 	background: #faa;
 	padding: 0 0 0 10px;
+	transition: all 0.3s;
+	overflow: hidden;
+
+	
+	&.root-menu {
+		position: absolute;
+		display: flex;
+		flex-flow: column;
+		width: 30%;
+		top: 0;
+		right: 0;
+		background: #363664;
+		padding: 10px 0 0 10px;
+		z-index: 15;
+
+		&.clause-folder{
+			max-height: calc(1.5em + 10px) !important;
+		}
+	}
+
+	button {
+    /* height: 1.1em; */
+    margin: 0.2em;
+    border: unset;
+    padding: 0.1em;
+    /* display: inline; */
+    font-size: 12px;
+    border-radius: 0.2em;
+	}
+	p {
+		color: #fff;
+		margin: unset;
+		pointer-events: none;
+	}
+	div :not(.folder){
+		height: 1.5em;
+		/* height: unset; */
+	}
+
+	
+	.clause-folder{
+		max-height: 1.5em !important;
+	}
+		/* overflow: hidden; */
+		/* max-height: 1.5em; */
+
+	/* .folder-tile {
+		content: "a";
+	} */
+	>.folder-tile > p::before {
+		content: '▼';
+	}
+
+	&.clause-folder > .folder-tile > p::before {
+		content: '▶';
+	}
 }
 
-.root-menu div :not(.folder){
-	height: 1.5em;
-	/* height: unset; */
-}
 
-/* .root-menu div:has(> .meter-out){
-	display: flex;
-} */
 
 .meter-out {
 	width: 60%;
@@ -453,60 +400,67 @@ a-scene {
 	height: 1.1em !important;
 	/* border-radius: 0.55em; */
 	margin: 0.2em 5% 0.2em 0%;
+
+	&::after{
+		content: attr(data-value);
+		color: #fff;
+		/* background: #0d4eff; */
+		display: block;
+		position: absolute;
+		right: calc(-1.1em);
+		translate: 100% 0;
+		width: 30%;
+		height: 100%;
+	}
+	&::before {
+		content: "";
+		width: calc(100% + 1.1em);
+		display: block;
+		position: absolute;
+		height: 1.1em !important;
+		border-radius: 0.55em;
+		/* margin: 0.2em 5% 0.2em 0%; */
+		background: #b5b8b2;
+		transform: translate(-0.55em, 0em);
+	}
+	
+	> .meter-in {
+		width: 100%;
+		max-width: 0%;
+		/* border-radius: 0.55em; */
+		top: 50%;
+		height: 0.5em !important;
+		/* margin: 0.3em 0 0 0; */
+		background: #374eff;
+		position: absolute;
+		overflow: unset !important;
+		transform: translate(0em, -50%);
+
+		&::before {
+			content: "";
+			display: block;
+			position: absolute;
+			width: 0.5em;
+			height: 0.5em;
+			border-radius: 0.25em 0 0 0.25em;
+			background: #374eff;
+			transform: translate(-0.25em, 0em);
+		}
+		&::after {
+			content: "";
+			display: block;
+			position: absolute;
+			width: 0.9em;
+			height: 0.9em;
+			border-radius: 50%;
+			top: 0.25em;
+			right: -0.9em;
+			background: #374eff;
+			transform: translate(-0.45em, -0.45em);
+		}
+	}
 }
 
-/* .meter-out > *{
-	opacity: unset;
-} */
-
-.meter-out::before {
-	content: "";
-	width: calc(100% + 1.1em);
-	display: block;
-	position: absolute;
-	height: 1.1em !important;
-	border-radius: 0.55em;
-	/* margin: 0.2em 5% 0.2em 0%; */
-	background: #b5b8b2;
-	transform: translate(-0.55em, 0em);
-}
-
-.meter-in {
-	width: 100%;
-	max-width: 0%;
-	/* border-radius: 0.55em; */
-	top: 50%;
-	height: 0.5em !important;
-	/* margin: 0.3em 0 0 0; */
-	background: #374eff;
-	position: absolute;
-	/* display: none; */
-	overflow: unset !important;
-	z-index: 100;
-	transform: translate(0em, -50%);
-}
-.meter-in::before {
-	content: "";
-	display: block;
-	position: absolute;
-	width: 0.5em;
-	height: 0.5em;
-	border-radius: 0.25em 0 0 0.25em;
-	background: #374eff;
-	transform: translate(-0.25em, 0em);
-}
-.meter-in::after {
-	content: "";
-	display: block;
-	position: absolute;
-	width: 0.9em;
-	height: 0.9em;
-	border-radius: 50%;
-	top: 0.25em;
-	right: -0.9em;
-	background: #374eff;
-	transform: translate(-0.45em, -0.45em);
-}
 
 .time-meter-animation{
 	/* animation-name: r2; linear*/
@@ -531,21 +485,6 @@ a-scene {
 	100% { max-width: calc(100% - 8.8px); }
 }
 
-.clause-folder > div:not(.folder-tile) {
-	overflow: hidden;
-	max-height: 0;
-}
-
-/* .folder-tile {
-	content: "a";
-} */
-.folder-tile > p::after {
-  content: '▼';
-}
-
-.clause-folder > .folder-tile > p::after {
-  content: '▶';
-}
 
 
 #b {
@@ -573,7 +512,7 @@ a-scene {
 
 .step-list-menu {
 	position: absolute;
-	z-index: 5;
+	z-index: 10;
 	width: 30%;
 	height: calc(100% - 34px);
 	right: 0;
@@ -756,3 +695,110 @@ a-scene {
   z-index: -1;
   /* mix-blend-mode: color; */
 }
+
+
+@keyframes sun-rise {
+  0% {
+    /* ビューポートを通過して太陽を下に押し下げる */
+    opacity: 1;
+  }
+  50% {
+    /* 太陽を既定の位置に戻す */
+    opacity: 0;
+  }
+  100% {
+    /* 太陽を既定の位置に戻す */
+    opacity: 1;
+  }
+}
+
+.ano-polygon {
+	fill: #3256cb;
+}
+
+.ano-frame {
+	stroke: #483e57;
+	stroke-width: 4;
+	fill: rgb(194 198 255 / 87%);
+}
+
+.ano-fObj {
+	overflow: auto;
+	pointer-events: all;
+	scrollbar-color: #6b6b6b #00000000;
+	scrollbar-width: thin;
+
+}
+
+.ano-body {
+	background-color: #0000;
+	padding: 10px;
+	padding-right: 0px;
+}
+
+.ano-btton {
+	position: absolute;
+	display: none;
+	background-color: #818693;
+	padding: 10px;
+	right: 5px;
+	bottom: 5px;
+	width: 20%;
+	text-align: center;
+}
+
+.ano-line {
+	stroke: #3256cb;
+	stroke-width: 5;
+	fill: none;
+	filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
+}
+
+.ui-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	pointer-events: none; /* 下のキューブを触れるようにする */
+	z-index: 30;
+	transition: 0.8s cubic-bezier(0.22, 0.64, 0.26, 0.99);
+	transition-property: background-color, backdrop-filter;
+}
+
+.loading-ui-overlay{
+	background-color: var(--theme-color, #010a26);
+	/* background-color: #010a26e2; */
+	pointer-events: all;
+	backdrop-filter: blur(3px);
+}
+
+.icon-frames > polygon {
+	fill: none;
+	stroke: #ffffff;
+	stroke-width: 5px;
+}
+
+.moving-dot {
+	fill: #e53e3e;
+  animation: travel 6s linear infinite;
+}
+
+@keyframes travel {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+.moving-line {
+	fill: none;
+	stroke: #3182ce;
+	stroke-width: 4px;
+	stroke-linecap: inherit;
+	stroke-linejoin: bevel;
+}
+
+

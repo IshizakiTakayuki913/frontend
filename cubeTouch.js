@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 
+
 import { meter } from './meter.js'
 import {ObjectManager} from './Object.js'
 import {SceneManager} from './SceneManager.js'
@@ -11,11 +12,20 @@ import {colorinput} from './colorinput.js'
 
 import {motionList} from './motionList.js'
 
+import {AnnotationManager, SVGAnnotation} from './annotation.js'
+
+
+import {TutorialManager} from './tutorial.js'
+
 import {
   State, cubeState, color_set,
   cubeset, wait,
-  objectPrint, positionGet
+  objectPrint, positionGet, modelIndex
 } from './solve.js'
+// import { vec2 } from 'three/src/nodes/tsl/TSLCore.js'
+
+const svgNS = "http://www.w3.org/2000/svg"
+const xmlns= "http://www.w3.org/1999/xhtml"
 
 window.THREE = THREE
 window.color_set = color_set
@@ -24,22 +34,8 @@ window.objectPrint = objectPrint
 
 
 class cubemode{
-  #cubeHolding  = true
+  #cubeHolding = true
   #cubeMoveEnd = 0
-  // this.#cubeTouching = true
-  // this.#cubeMoving = true
-  // this.load_end = true
-  cube_mode = "Free"
-  cube_modes = {
-    "Free":         0,
-    "Calculation":  1,
-    "Execution":    2,
-    "Input":        3,
-    "learning":     4,
-    "Viewpoint":    0,
-    "Rotation":     1,
-    "Colorset":     2,
-  }
 
   static STATE_INIT      = 0	// 閲覧
   static STATE_EXPLORE   = 1	// 閲覧
@@ -58,20 +54,16 @@ class cubemode{
   static ALLOW_COLOR_PICK     = 1 << 3
   static ALLOW_ANIM_CONTROL   = 1 << 4
 
-  mode_list = [
-    [ true,  true, false],
-    [false, false, false],
-    [ true, false, false],
-    [ true, false,  true],
-    [ true,  true, false],
-  ]
   rote_speed = 2
+  
+  ano_obj = null
+  ano_obj_type = null
 
 	constructor() {
     this.currentState = cubemode.STATE_INIT
     this.currentFlags = 0
 
-	// --- 2. 有効フラグの設定 (どの状態で何ができるか) ---
+    // --- 2. 有効フラグの設定 (どの状態で何ができるか) ---
     this.permissions = {
       [cubemode.STATE_INIT]: 0,
       [cubemode.STATE_EXPLORE]: 
@@ -95,11 +87,31 @@ class cubemode{
       [cubemode.STATE_PRACTICE]:  [cubemode.STATE_GUIDING]
     };
 
-    // console.log(`メインシステムが読み込み完了！`)
-    this.fileLoaded = this.fileLoaded.bind(this)
+    
+    const _svg = document.createElementNS(svgNS, "svg");
+    document.querySelector("body").appendChild(_svg)
+    _svg.id = "annotation-svg"
+    _svg.classList.add("ui-overlay")
+    
 
+    this.AnnotationManager = new AnnotationManager(_svg)
+    this.anoMap = {}
+
+    this.TutorialManager = new TutorialManager(
+      _svg, this.AnnotationManager,
+      this.openMenuFolder. bind(this)
+    )
+
+    this.AnnotationManager.loadingIconSet()
+
+    this.fileLoaded = this.fileLoaded.bind(this)
     window.addEventListener("load", this.fileLoaded)
 	}
+  /**
+   * 状態の遷移が可能かを判断する
+   * @param {number} nextState STATE 次に遷移予定の状態
+   * @returns 
+   */
   changeState(nextState) {
     const allowed = this.transitionRules[this.currentState];
     
@@ -112,9 +124,11 @@ class cubemode{
       return false
     }
   }
-
+  /**
+   * 状態の遷移を行う　また、遷移で機能するサブクラスのＯＮ・ＯＦＦを行う
+   * @param {number} nextState STATE 次に遷移予定の状態
+   */
   onStateEnter(nextState) {
-
     // 状態が変わった瞬間に一度だけやりたいこと
     const oldFlags = this.currentFlags;
     const nextFlags = this.permissions[nextState];
@@ -135,20 +149,12 @@ class cubemode{
     // 状態更新
     this.currentState = nextState;
     this.currentFlags = nextFlags;
-    
-    // if (state === cubemode.STATE_EXPLORE) {
-    //   // if(this.Viewpoint) 
-    // }else if (state === cubemode.STATE_EDITING) {
-
-    // }else if (state === cubemode.STATE_ANALYZING) {
-      
-    // }else if (state === cubemode.STATE_GUIDING) {
-      
-    // }else if (state === cubemode.STATE_PRACTICE) {
-      
-    // }
   }
-
+  /**
+   * 現在の遷移でサブクラスの機能が使用される場合は宣言、停止されるを場合は消去を行う
+   * @param {*} flag サブクラス
+   * @param {*} bool ＯＮ・ＯＦＦ
+   */
   initializ(flag, bool){
     if((flag & cubemode.ALLOW_VIEW_CONTROL) !== 0 ){
       if(!bool) {
@@ -161,6 +167,7 @@ class cubemode{
           AnimeManager: this.AnimeManager,
           SceneManager: this.SceneManager,
           status: this.mode_set_Viewpointer.bind(this),
+          callback: this.upDate_view.bind(this)
         })
       }
     }
@@ -234,7 +241,9 @@ class cubemode{
           allow_practice: this.mode_Practicer.bind(this),
           Change_Guide: this.func_Change_Guide.bind(this),
           Change_Practice: this.func_Change_Practice.bind(this),
-          get_speed: () => { return this.rote_speed}
+          get_speed: () => { return this.rote_speed},
+          set_ano: this.set_ano.bind(this),
+          callback: this.upDate_view.bind(this)
         })
       }
     }
@@ -252,35 +261,38 @@ class cubemode{
   set cubeMoveEnd(time){
     this.#cubeMoveEnd = time
   }
-
+  /**
+   * メインのファイルを読み込まれた際に呼び出される
+   * ここで初期環境の構築を行う
+   */
   async fileLoaded(){
     console.log("すべてのリソース（画像・CSS・JS）が読み込み完了！")
     window.removeEventListener("load", this.fileLoaded)
 
-    const canvas = document.createElement("canvas")
-    canvas.id="icon"
-    canvas.style.width = "40vmin"
-    canvas.style.height = "40vmin"
-    canvas.classList.add("load-icon")
+    // const canvas = document.createElement("canvas")
+    // canvas.id="icon"
+    // canvas.style.width = "40vmin"
+    // canvas.style.height = "40vmin"
+    // canvas.classList.add("load-icon")
 
-    const ctx = canvas.getContext("2d")
-    canvas.width = 300
-    canvas.height = 300
-    const w = 300
-    ctx.lineWidth = w/10
-    let fanwisegradient = ctx.createConicGradient(-0.2, w/2, w/2);
-    fanwisegradient.addColorStop(0,   '#000');
-    fanwisegradient.addColorStop(0.3, '#000');
-    fanwisegradient.addColorStop(0.6, '#fff');
-    fanwisegradient.addColorStop(0.8, '#CCCCCC00');
-    ctx.strokeStyle = fanwisegradient;
-    ctx.lineCap = "round";
-    ctx.beginPath()
-    ctx.arc(w/2, w/2, w/2-ctx.lineWidth/2, 0, 1.6*Math.PI)
-    ctx.stroke()
+    // const ctx = canvas.getContext("2d")
+    // canvas.width = 300
+    // canvas.height = 300
+    // const w = 300
+    // ctx.lineWidth = w/10
+    // let fanwisegradient = ctx.createConicGradient(-0.2, w/2, w/2);
+    // fanwisegradient.addColorStop(0,   '#000');
+    // fanwisegradient.addColorStop(0.3, '#000');
+    // fanwisegradient.addColorStop(0.6, '#fff');
+    // fanwisegradient.addColorStop(0.8, '#CCCCCC00');
+    // ctx.strokeStyle = fanwisegradient;
+    // ctx.lineCap = "round";
+    // ctx.beginPath()
+    // ctx.arc(w/2, w/2, w/2-ctx.lineWidth/2, 0, 1.6*Math.PI)
+    // ctx.stroke()
 
-    document.querySelector("body").appendChild(canvas)
-    this.icon = canvas
+    // document.querySelector("body").appendChild(canvas)
+    // this.icon = canvas
 
     // const iframe = document.getElementById('iframe')
     // iframe.width = 100
@@ -303,34 +315,51 @@ class cubemode{
 
     map.append(list)
 
-    const folderTile = document.getElementsByClassName("folder-tile")
-    // console.log(folderTile)
+    const folderTile = Object.values(document.getElementsByClassName("folder"))
+    
     for(let i=0; i<folderTile.length; i++){
-      folderTile[i].addEventListener("click", (e) => {
-        // console.log(folderTile[i].parentElement)
-        if(folderTile[i].parentElement.classList.value.includes("clause-folder")){
-          folderTile[i].parentElement.classList.remove('clause-folder')
-          
+
+      folderTile[i].style.maxHeight = `${folderTile[i].scrollHeight}px`
+
+      folderTile[i].querySelector(".folder-tile")
+      .addEventListener("click", (e) => {
+        if(e.target.parentElement !== folderTile[i]) return
+
+        if(folderTile[0].classList.value.includes("tutorial-targeting"))  return
+
+        if(folderTile[i].classList.value.includes("clause-folder")){
+          folderTile[i].classList.remove('clause-folder')
         }
         else{
-          folderTile[i].parentElement.classList.add('clause-folder')
-
+          folderTile[i].classList.add('clause-folder')
         }
       })
     }
 
+    this.menuFolders = folderTile
+    this.tree = [
+      -1,
+      0,
+      1,
+      0,
+      3,
+      4,
+      4,
+      0
+    ]
+
     
-    this.calculation_set_buttont = document.getElementsByClassName("calculation_set_buttont")[0]
+    this.calculation_set_buttont = document.getElementsByClassName("function-calculation-set-buttont")[0]
     this.func_calculation_set_buttont = this.func_calculation_set_buttont.bind(this)
 		this.calculation_set_buttont.addEventListener('click', this.func_calculation_set_buttont)
     
     
-    this.color_set_buttont = document.getElementsByClassName("color-set-buttont")[0]
+    this.color_set_buttont = document.getElementsByClassName("function-color-set-buttont")[0]
     this.func_color_set_buttont = this.func_color_set_buttont.bind(this)
 		this.color_set_buttont.addEventListener('click', this.func_color_set_buttont)
     
     
-    this.fullscreen_buttont = document.getElementsByClassName("fullscreen_buttont")[0]
+    this.fullscreen_buttont = document.getElementsByClassName("function-fullscreen-buttont")[0]
     this.func_fullscreen_buttont = this.func_fullscreen_buttont.bind(this)
 		this.fullscreen_buttont.addEventListener('click', this.func_fullscreen_buttont)
 
@@ -388,6 +417,15 @@ class cubemode{
     scnMan.scene.add(objMan.objects.handL)
     scnMan.scene.add(objMan.objects.handR)
 
+    // const geometry = new THREE.BoxGeometry(1, 1, 1);
+    // エッジのジオメトリを作成（30度以上の角度があるエッジを抽出）
+    // console.log(objMan.objects.handL)
+    // const edges = new THREE.EdgesGeometry(objMan.objects.handL.children[0].children[0].geometry, 30); 
+    // const outLine = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xFF0000 }));
+    
+    // outLine.scale.set(56,56,56)
+    // scnMan.scene.add(outLine);
+
     // // シーンに追加
     // const axesHelper = new THREE.AxesHelper(2);
     // scnMan.scene.add(axesHelper)
@@ -422,13 +460,13 @@ class cubemode{
 
     this.dispCube = new cubeState()
 
-    this.dispCube.cube.set({
-      "cp":[4,0,2,3,1,5,6,7],
-      "co":[2,0,1,1,2,1,1,1],
-      "ep":[11,5,9,6,7,4,2,0,1,10,3,8],
-      "eo":[0,0,0,0,0,0,0,0,0,0,0,0],
-      "c":[0,1,2,3,4,5]
-    })
+    // this.dispCube.cube.set({
+    //   "cp":[4,0,2,3,1,5,6,7],
+    //   "co":[2,0,1,1,2,1,1,1],
+    //   "ep":[11,5,9,6,7,4,2,0,1,10,3,8],
+    //   "eo":[0,0,0,0,0,0,0,0,0,0,0,0],
+    //   "c":[0,1,2,3,4,5]
+    // })
 
     // this.dispCube.cube.set(new State({
     //   cp:[4,5,0,7,3,1,6,2],
@@ -444,7 +482,171 @@ class cubemode{
     this.#cubeHolding  = false 
 
     this.changeState(cubemode.STATE_EXPLORE)
+
+    // const ano_mes = document.createElement("div")
+    // ano_mes.id = "ano-mes"
+    // ano_mes.classList.add("annotation-message")
+    // this._main.appendChild(ano_mes)
+
+    // this.ano_mes = ano_mes
+
+    // this.setupSVG()
+
+    await wait(5000)
+    this.AnnotationManager.svg.style.setProperty('--theme-color', '#010a26e2');
+    this.AnnotationManager.loadingIconRemove()
+
+    this.TutorialManager.start()
+
   }
+  async openMenuFolder(_el){
+   const _folder = _el.closest(".folder")
+
+    const index = this.menuFolders.findIndex((_el)=>{return _el===_folder})
+    let isCloues = false
+    console.log({_folder, index})
+    for(let i=index; i!=-1;){
+      if(this.menuFolders[i].classList.value.includes("clause-folder")){
+        this.menuFolders[i].classList.remove('clause-folder')
+        isCloues = true
+      }
+      i = this.tree[i]
+    }
+    if(isCloues) await wait(500)
+
+    return
+  }
+  /**
+   * 新な解説のステップ設定時にアノテーションの対象のパーツを指定する
+   * @param {String} type キューブのパーツのタイプ
+   * @param {number} index キューブのパーツ内のインデックス
+   */
+  set_ano(type,index){
+    console.log({type,index})
+    this.ano_obj = this.ObjectManager.objects.cube.children[modelIndex(type,index)]
+    this.ano_obj_type = type
+  }
+  /**
+   * 解説モードのときに、情報が変更されたときサブクラスに呼び出される
+   * アノテーションクラスのアップデートを命令する
+   * @param {*} viewP 
+   */
+  upDate_view(viewP){
+    const keys = Object.keys(this.anoMap)
+    Object.values(this.anoMap).forEach((e, i) => {
+      if(e.mode !== "3DPointer") return
+
+      const ans = this.annotation_set(e.obj, e.type)
+      
+      // const a = this.ano_mes.getBoundingClientRect()
+      // const b = {x: a.left + a.width*0.9, y: a.top + a.height}
+      const b = {x: 580, y: 150}
+      const c = ans.map(e=> { return { x: e.x-b.x, y: e.y-b.y, z: e.z }})
+      
+      let dd = {xSum: 0, ySum: 0, xMin: Infinity, xMax: -Infinity, yMin: Infinity, yMax: -Infinity}
+      for(let i=0;i<c.length;i++){
+        dd.xSum += ans[i].x
+        dd.ySum += ans[i].y
+
+        dd.xMin = dd.xMin > ans[i].x ? ans[i].x : dd.xMin
+        dd.xMax = dd.xMax < ans[i].x ? ans[i].x : dd.xMax
+        
+        dd.yMin = dd.yMin > ans[i].x ? ans[i].x : dd.yMin
+        dd.yMax = dd.yMax < ans[i].x ? ans[i].x : dd.yMax
+      }
+
+      this.AnnotationManager.activeAnnotations.get(keys[i]).updateLeaderLine(
+        b.x, b.y,
+        dd.xMax, dd.ySum/c.length
+      )
+
+      // console.log(dd)
+      // this.updateLeaderLine(
+      //   b.x, b.y,
+      //   dd.xMax, dd.ySum/c.length
+      // )
+    })
+  }
+  /**
+   * キューブのパーツのタイプに分けて、対象の座標を変換した一覧の値を返す
+   * 3次元座標を画面の2次元座標に変換
+   * @param {*} obj 
+   * @param {*} type 
+   * @returns {{{x: number, y: number, z: number}}} obj
+   */
+  annotation_set(obj, type){
+    const dist = {
+      "co": [
+        { "x":-1.5, "y": 1.5, "z":-1.5 },
+        { "x":-0.5, "y": 1.5, "z":-1.5 },
+        { "x":-0.5, "y": 1.5, "z":-0.5 },
+        { "x":-1.5, "y": 1.5, "z":-0.5 },
+        { "x":-1.5, "y": 0.5, "z":-1.5 },
+        { "x":-0.5, "y": 0.5, "z":-1.5 },
+        { "x":-0.5, "y": 0.5, "z":-0.5 },
+        { "x":-1.5, "y": 0.5, "z":-0.5 }
+      ],
+      "ce": [
+        { "x":-0.5, "y": 0.5, "z":-1.5 },
+        { "x": 0.5, "y": 0.5, "z":-1.5 },
+        { "x": 0.5, "y": 0.5, "z":-0.5 },
+        { "x":-0.5, "y": 0.5, "z":-0.5 },
+        { "x":-0.5, "y":-0.5, "z":-1.5 },
+        { "x": 0.5, "y":-0.5, "z":-1.5 },
+        { "x": 0.5, "y":-0.5, "z":-0.5 },
+        { "x":-0.5, "y":-0.5, "z":-0.5 }
+      ],
+      "ed": [
+        { "x":-1.5, "y": 0.5, "z":-1.5 },
+        { "x":-0.5, "y": 0.5, "z":-1.5 },
+        { "x":-0.5, "y": 0.5, "z":-0.5 },
+        { "x":-1.5, "y": 0.5, "z":-0.5 },
+        { "x":-1.5, "y":-0.5, "z":-1.5 },
+        { "x":-0.5, "y":-0.5, "z":-1.5 },
+        { "x":-0.5, "y":-0.5, "z":-0.5 },
+        { "x":-1.5, "y":-0.5, "z":-0.5 }
+      ]
+    }[type]
+    const _camera = this.SceneManager.camera
+    const ans = dist.map(e => this.getScreenPosition(obj, _camera, e))
+    
+    return ans
+  }
+  /**
+   * 画面上の２次元座標に変更
+   * @param {THREE.Object3D} target 
+   * @param {THREE.Camera} camera 
+   * @param {{x: number, y: number, z: number}} dist ズレ
+   * @returns {{x: number, y: number, z: number}}
+   */
+  getScreenPosition(target,camera, dist){
+    // 1. ローカル空間での座標を定義 (例: パーツの中心からx方向に0.5, y方向に0.5ずれた点)
+    const localPoint = new THREE.Vector3(dist.x, dist.y, dist.z);
+
+    // 2. その座標をワールド座標に変換
+    // ※ localPointそのものが書き換わるので注意
+
+    const vector = target.localToWorld(localPoint);
+
+    // console.log({target, camera, dist})
+    // console.log(vector);
+    // これで worldPoint は世界全体の中心(0,0,0)からの座標になります。
+
+    vector.project(camera);
+
+    // 3. ブラウザのピクセル座標に変換
+    const x = (vector.x + 1) / 2 * this.SceneManager.canvas.clientWidth
+    const y = -(vector.y - 1) / 2 * this.SceneManager.canvas.clientHeight
+    // console.log({ x: (vector.x + 1) / 2, y: -(vector.y - 1) / 2})
+    // console.log({ x, y, z: vector.z })
+
+    return { x, y, z: vector.z };
+  }
+  /**
+   * キューブのモデルを制作する
+   * @param {THREE.Object3D} objs キューブの基礎partsがまとめられてたモデル
+   * @returns {THREE.Object3D} 完成後のモデル
+   */
   makeCube(objs){
     const root = new THREE.Group()
     const center = new THREE.Group()
@@ -531,9 +733,17 @@ class cubemode{
 
     return root
   }
+  /**
+   * 解説アニメーション時の回転速度のmeterのコールバック関数
+   * @param {number} data 回速度
+   */
   meter1(data){
     this.rote_speed = data.value
   }
+  /**
+   * 解説アニメーション時のハンドモデルの透明度のmeterのコールバック関数
+   * @param {number} data 透明度の値
+   */
   meter2(data){
     const Lhand = this.ObjectManager.objects.handL
     const Rhand = this.ObjectManager.objects.handR
@@ -552,24 +762,51 @@ class cubemode{
       }
     })
   }
+  /**
+   * サブクラスから自身が利用できるかを判断する
+   * @returns {boolean} 
+   */
   mode_set_Colorseter(){
     return (this.currentFlags & cubemode.ALLOW_COLOR_PICK) !== 0
   }
+  /**
+   * サブクラスから自身が利用できるかを判断する
+   * @returns {boolean} 
+   */
   mode_set_presskey(){
     return (this.currentFlags & cubemode.ALLOW_KEY_ROTATE) !== 0
   }
+  /**
+   * サブクラスから自身が利用できるかを判断する
+   * @returns {boolean} 
+   */
   mode_set_Rotation(){
     return (this.currentFlags & cubemode.ALLOW_TOUCH_ROTATE) !== 0
   }
+  /**
+   * サブクラスから自身が利用できるかを判断する
+   * @returns {boolean} 
+   */
   mode_set_Viewpointer(){
     return (this.currentFlags & cubemode.ALLOW_VIEW_CONTROL) !== 0
   }
+  /**
+   * サブクラスから自身が利用できるかを判断する
+   * @returns {boolean} 
+   */
   mode_set_Guider(){
     return this.currentState === cubemode.STATE_GUIDING
   }
+  /**
+   * サブクラスから自身が利用できるかを判断する
+   * @returns {boolean} 
+   */
   mode_Practicer(){
     return this.currentState === cubemode.STATE_PRACTICE
   }
+  /**
+   * 色入力サブクラスから色入力が完了して呼び出される
+   */
   Color_completion(Check_ans){
     this.dispCube.cube.set(Check_ans)
     this.dispCube.color.set(new State())
@@ -578,22 +815,42 @@ class cubemode{
     color_set(this.dispCube.color.c, this.ObjectManager.objects.cube)
     
     this.changeState(cubemode.STATE_EXPLORE)
+
+    const event = new CustomEvent("tutorial", {
+			detail: {
+				type: "user action",
+        name: "color-set-completion",
+			}
+		});
+		window.dispatchEvent(event);
+
   }
+  /**
+   * ボタン　解説機能の使用
+   * APIを呼び出す
+   */
   async func_calculation_set_buttont(){
     if(this.currentState == cubemode.STATE_EXPLORE){
       this.changeState(cubemode.STATE_ANALYZING)
 
-      this.icon.classList.add("rotate-ani")
-      this.icon.style.display = "block"
+      this.AnnotationManager.loadingIconSet()
 
-      await wait(100)
+      window.dispatchEvent(new CustomEvent("tutorial", {
+        detail: {
+          type: "function click",
+          name: "calculation" 
+        }
+      }));
+
+
+      await wait(1000)
 
       const time = Date.now()
 
       const reqData = {ss: this.dispCube.cube, cd: this.dispCube.color.c}
       const request = await fetch(
-        'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010', {
-        // 'http://localhost:7071/api/CubeSovleFunction010', {
+        // 'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010', {
+        'http://localhost:7071/api/CubeSovleFunction010', {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',
@@ -601,7 +858,9 @@ class cubemode{
           },
           body: JSON.stringify(reqData)
       })
+
       console.log(request)
+
       const response = await request.json()
       console.log(response)
 
@@ -616,20 +875,44 @@ class cubemode{
 
       localStorage.setItem("json", localStorage.getItem("json")+" "+(Date.now() - time))
       
-      await wait(100)
+      await wait(5000)
 
-      this.icon.style.display = "none"
-      this.icon.classList.remove("rotate-ani")
+      const is = this.changeState(cubemode.STATE_GUIDING)
+
+      this.calculation_set_buttont.innerHTML = "実行中"
       
       this.ObjectManager.objects.handL.visible = true
       this.ObjectManager.objects.handR.visible = true
 
-      this.changeState(cubemode.STATE_GUIDING)
+      if(is){
+        this.AnnotationManager.loadingIconRemove()
+        
+        window.dispatchEvent(new CustomEvent("tutorial", {
+          detail: {
+            "type": "user action",
+            "name": "calculation-response-completion",
+          }
+        }));
+      }
+      else {
+        console.error("解説機能に切り替わることができなかった")
+      }
+
     }
     else if(this.currentState == cubemode.STATE_GUIDING){
       if(this.timeList.step_move)  return
 
       this.changeState(cubemode.STATE_EXPLORE)
+
+      const event = new CustomEvent("tutorial", {
+        detail: {
+          type: "btton",
+          name: "exrlore" 
+        }
+      });
+      window.dispatchEvent(event);
+
+      this.calculation_set_buttont.innerHTML = "実行"
       
       this.ObjectManager.objects.handL.visible = false
       this.ObjectManager.objects.handR.visible = false
@@ -640,15 +923,54 @@ class cubemode{
       cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
     }
   }
+  /**
+   * ボタン　色入力の使用
+   */
   func_color_set_buttont(){
-    this.changeState(cubemode.STATE_EDITING)
+    if(this.currentState === cubemode.STATE_EXPLORE){
+      const is = this.changeState(cubemode.STATE_EDITING)
+      if(!is) return
+
+      const event = new CustomEvent("tutorial", {
+        detail: {
+          type: "function click",
+          name: "color-set" 
+        }
+      });
+      window.dispatchEvent(event);
+    }
+    else if(this.currentState === cubemode.STATE_EDITING){
+      const is = this.changeState(cubemode.STATE_EXPLORE)
+      if(!is) return
+      
+      cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
+      color_set(this.dispCube.color.c, this.ObjectManager.objects.cube)
+
+      const event = new CustomEvent("tutorial", {
+        detail: {
+          type: "function click",
+          name: "color-set-break" 
+        }
+      });
+      window.dispatchEvent(event);
+    }
+
   }
+  /**
+   * ボタン　解説機能の練習モードの使用
+   */
   func_Change_Practice(){
     this.changeState(cubemode.STATE_PRACTICE)
   }
+  /**
+   * ボタン　解説機能の解説モードの使用
+   */
   func_Change_Guide(){
     this.changeState(cubemode.STATE_GUIDING)
   }
+  /**
+   * ボタン　フルスクリーン
+   */
   func_fullscreen_buttont(){
     if (!document.fullscreenElement) {
       document.getElementsByTagName("body")[0].requestFullscreen().catch((err) => {
@@ -664,7 +986,3 @@ class cubemode{
 
 const mainSystem = new cubemode()
 window.System = mainSystem
-
-const ip = window.location.hostname
-const rotates = 3100
-const animes = 3200
