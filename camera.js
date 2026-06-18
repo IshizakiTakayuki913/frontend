@@ -29,7 +29,7 @@ export class camera {
 		this.touchPress = false
 		this.touchMode = null
 
-		console.log(this.angle)
+		// console.log(this.angle)
 		// console.log(`カメラ　ーーーー`)
 
 		// console.log(this.scene)
@@ -74,6 +74,14 @@ export class camera {
 		this.camOut.position.x = this.#angle.r * Math.sin(this.#angle.y) * Math.cos(this.#angle.x)
 		this.camOut.position.y = this.#angle.r * Math.sin(-this.#angle.x)
 		this.camOut.position.z = this.#angle.r * Math.cos(this.#angle.y) * Math.cos(this.#angle.x)
+
+		// ズーム方式をドリーインからレンズズームに変更
+		// const r = 5
+		// this.camOut.position.x = r* Math.sin(this.#angle.y) * Math.cos(this.#angle.x)
+		// this.camOut.position.y = r*Math.sin(-this.#angle.x)
+		// this.camOut.position.z = r*Math.cos(this.#angle.y) * Math.cos(this.#angle.x)
+
+		
 		this.camOut.lookAt(new THREE.Vector3(0, 0, 0))
 
 		this.syncuser.manual(this.#angle)

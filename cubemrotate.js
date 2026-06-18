@@ -227,7 +227,8 @@ export class cubemrotate{
 
     // console.log({patrs: this.parts, partsNamt, parts_type, be, face})
 
-    if(!(parts_type === "ed" || parts_type === "ce" || parts_type === "co"))	return
+    if(!(parts_type === "ed" || parts_type === "ce" || parts_type === "co"))	return false
+    if(isNaN(_face))	return false
 
     const be = this.dispCube.cube[posName[parts_type]].indexOf(_be)
     const face = (_face + this.dispCube.cube[vecName[parts_type]][be]) % vecCount[parts_type]
@@ -237,6 +238,10 @@ export class cubemrotate{
     const num = this.faceToMove(parts_type, be, face)
 
     this.moves = cubeTileMove[num]
+
+    // if(this.moves === undefined){
+    // console.log({partsNamt, parts_type, be, face, num, moves: this.moves})
+    // }
 
     this.anims = {}
     const _ani = [...this.moves, this.moves.map(e => move_reverse[e])].flat(1)
@@ -271,6 +276,8 @@ export class cubemrotate{
     this.new_move = null
     this.new_rad = null
     this.raycast_rotate_T = true
+
+    return true
   }
   faceToMove(parts_type, be, face){
     let num = 0
@@ -392,10 +399,11 @@ export class cubemrotate{
     if(this.parts === null) return
 
     cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
-    this.search_parts()	
-    this.mousePress = true
-    this.setCubeHolding(true)
-    this.mousePos = {x:e.offsetX , y:e.offsetY}
+    if(this.search_parts()){
+      this.mousePress = true
+      this.setCubeHolding(true)
+      this.mousePos = {x:e.offsetX , y:e.offsetY}
+    }
   }
   touchStart(e){
     if(!this.status()) return
@@ -425,13 +433,14 @@ export class cubemrotate{
     if(this.parts === null) return
 
     cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
-    this.search_parts()	
     
-    this.touchPress = true
-    this.setCubeHolding(true)
-    this.touchId = e.touches[0].identifier
-    
-    this.mousePos = {x:e.touches[0].clientX , y:e.touches[0].clientY}
+    if(this.search_parts()){
+      this.touchPress = true
+      this.setCubeHolding(true)
+      this.touchId = e.touches[0].identifier
+      
+      this.mousePos = {x:e.touches[0].clientX , y:e.touches[0].clientY}
+    }
   }
   mouseUp(e){
     // console.log(e.target)

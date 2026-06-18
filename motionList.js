@@ -677,7 +677,6 @@ export class motionList{
       // this.stepAnimationPointSet(index, Data.value - this.stepStartTime[index])
       this.step_move = false    
       clearInterval(this.ano_upDate_id)
-      // this.meterBar.classList.remove("meter-animating")
       this.frame(Data.value/1000)
       return
     } 
