@@ -1,6 +1,6 @@
 
 import {
-  State, cubeset, wait, 
+  State, cubeset, wait, color_set, choice_object_color_set , COLOR_STATE
 } from './solve.js'
 
 import { meter } from './meter.js'
@@ -18,11 +18,8 @@ export class motionList{
   R_hand = null
   frameObj = null
 
-  mew_motion = null
   animation_start_time = null
   meterData = null
-
-  // meterBar = document.querySelector('.time-meter-animation')
 
   step_time_meter = null
   mode_direction = null
@@ -33,7 +30,7 @@ export class motionList{
   imgAnimData = null
   imgAnims = []
   // boneNumber = null
-
+  #setData = {}
   /**
    * 
    * @param {object} [] モデルデータ
@@ -43,9 +40,9 @@ export class motionList{
     L_hand = null, R_hand = null, frameObj = null, dispCube = null,
     ObjectManager = null, AnimeManager = null, SceneManager = null,
     status = null, allow_practice= null, Change_Guide = null, Change_Practice = null,
-    get_speed = null, set_ano = null, callback = null
+    get_speed = null, set_ano = null, callback = null, sequential_checkbox = null, disp = null,
+    gray_checkbox = null
   } = {}  ){
-    // console.log({model_centers, bone_centers})
 
     this.full_cube = full_cube
     this.L_hand = L_hand
@@ -63,16 +60,15 @@ export class motionList{
     this.get_speed = get_speed
     this.set_ano = set_ano
     this.callback = callback
+    this.sequential_checkbox = sequential_checkbox
+    this.gray_checkbox = gray_checkbox
+    this.mainDisplay = disp
 
-    this.mew_motion = true
     this.animation_start_time = undefined
     
     this.meterData = {
-      area: document.querySelector(`.step-meter .meter-out`),
-      bar: document.querySelector(`.step-meter .meter-out .meter-in`)
+      parent: document.querySelector(`.step-meter`)
     }
-
-    // this.meterBar = document.querySelector('.time-meter-animation')
 
     this.step_time_meter = null
     this.mode_direction = undefined
@@ -81,52 +77,246 @@ export class motionList{
 
     this.step_move = undefined
 
-    this.back_btn_func = this.back_btn_func.bind(this)
-    this.next_btn_func = this.next_btn_func.bind(this)
-    this.stop_btn_func = this.stop_btn_func.bind(this)
-    this.play_btn_func = this.play_btn_func.bind(this)
-    this.reverse_btn_func = this.reverse_btn_func.bind(this)
-    this.learning_btn_func = this.learning_btn_func.bind(this)
-    this.stepList_func = this.stepList_func.bind(this)
-    this.stepAnimationEnd = this.stepAnimationEnd.bind(this)
+    this.now_color_state = !gray_checkbox.checked ? COLOR_STATE.NORMAL : COLOR_STATE.LOW
 
+    this.back_btn_func = this.back_btn_func.bind(this)
     this.back_btn = document.querySelector('.back-div')
-    this.next_btn = document.querySelector('.next-div')
-    this.reverse_btn = document.querySelector('.reverse-div')
-    this.play_btn = document.querySelector('.play-div')
-    this.stop_btn = document.querySelector('.stop-div')
-    this.stepList = document.querySelector(`.step-lists`)
-    this.learning_btn = document.querySelector(`.learning-div`)
-    
-    this.next_btn.addEventListener("click", this.next_btn_func)
     this.back_btn.addEventListener("click", this.back_btn_func)
+
+    this.next_btn_func = this.next_btn_func.bind(this)
+    this.next_btn = document.querySelector('.next-div')
+    this.next_btn.addEventListener("click", this.next_btn_func)
+
+    this.stop_btn_func = this.stop_btn_func.bind(this)
+    this.stop_btn = document.querySelector('.stop-div')
     this.stop_btn.addEventListener("click", this.stop_btn_func)
-    this.play_btn.addEventListener("click", this.play_btn_func)
+
+    // this.play_btn_func = this.play_btn_func.bind(this)
+    // this.play_btn = document.querySelector('.play-div')
+    // this.play_btn.addEventListener("click", this.play_btn_func)
+
+    this.toggle_playback_func = this.toggle_playback_func.bind(this)
+    this.play_btn = document.querySelector('.play-div')
+    this.play_btn.addEventListener("click", this.toggle_playback_func)
+
+    this.reverse_btn_func = this.reverse_btn_func.bind(this)
+    this.reverse_btn = document.querySelector('.reverse-div')
     this.reverse_btn.addEventListener("click", this.reverse_btn_func)
-    this.learning_btn.addEventListener("click", this.learning_btn_func)
+
+    this.stepList_func = this.stepList_func.bind(this)
+    this.stepList = document.querySelector(`.step-lists`)
     this.stepList.addEventListener("click", this.stepList_func)
 
+    this.sulvesButtons = document.querySelector(".sulves-buttons")
+    this.sulvesButtons.style.gridTemplateColumns = `repeat(${3}, 1fr)`
+
+    this.play_space_key = this.play_space_key.bind(this)
+    window.addEventListener("keydown", this.play_space_key)
+
+    this.stepAnimationEnd = this.stepAnimationEnd.bind(this)
     this.AnimeManager.mixersName.cube.mixer.addEventListener('finished', this.stepAnimationEnd)
+
+    this.sequential_change_func = this.sequential_change_func.bind(this)
+    this.sequential_checkbox.addEventListener("change", this.sequential_change_func)
+
+    this.cube_gray_change_func = this.cube_gray_change_func.bind(this)
+    this.gray_checkbox.addEventListener("change", this.cube_gray_change_func)
+      
+    this.learning_btn = document.createElement("div")
+    this.learning_btn.classList.add("learning-div")
+
+    const _p = document.createElement("p")
+    _p.textContent = '試行モードへ'
+    this.learning_btn.appendChild(_p)
+
+    this.learning_btn_func = this.learning_btn_func.bind(this)
+    this.learning_btn.addEventListener("click", this.learning_btn_func)
+
+    this.mainDisplay.appendChild(this.learning_btn)
+    this.learning_btn.style.display = "none"
+
   }
-  async ins(_Datas, _color_data, _Rotes, _RotPatterns, animData){
-    this.setData = new State(_Datas)
-    
-    const _data = Object.keys(animData.data)
-    _data.forEach((e, i)=>{
-      this[e] = animData.data[e]
-    })
-
-    this.animations = {
-      L_hand: "L_hand",
-      R_hand: "R_hand",
-      cube: "full_cube",
+  rotesListMake(Pattern){
+    const imgSize = {
+      min: 45,
+      max: 60,
     }
-    this.imgAnimData = animData.anim.img
-    console.log(animData.anim)
 
-    Object.keys(this.animations).forEach((e) => {
-      this.animations[e] = Animation.makeAnimation(animData.anim[this.animations[e]])
-    })
+    const _list = document.querySelector(".list")
+    const listSize = {
+      w: _list.clientWidth,
+      h: _list.clientHeight,
+    }
+
+    this.stepGroupAnimCheck = Array.from({ length: this.groupRotesCube.length }, () => false)
+
+    const imgW = Math.ceil(Math.min(document.documentElement.clientWidth, document.documentElement.clientHeight)*0.07)
+
+    const rotas = document.getElementsByClassName('rotas')
+  
+    const imgDiv = document.createElement('div')
+    imgDiv.classList.add("img-div")
+    // imgDiv.style.width = imgW
+    // imgDiv.style.height = imgW
+
+    const img = document.createElement('img')
+    img.classList.add('rotate-img')
+
+    const lineCount = parseInt(listSize.w / imgW)
+
+    const _name = document.createElement("p")
+
+    const step = [
+      [
+        // [
+          // "U","U'","U2",
+          // "R","R'","R2",
+          // "L","L'","L2",
+          // "y R2 y'","F2",
+        // ],
+        [
+          // "F","F'","F2",
+          // "U' R' F",
+          "U' R' F","R' F R",
+        ],
+      ],
+      [
+        // [
+          // "y","y'","y2",
+          // "U","U'","U2",
+          // "R U R'",
+        // ],
+        [
+          "R U R'",
+          "U R U' R'",
+          "R U' R'",
+          "R U2 R' U' R U R'",
+        ],
+      ],
+      [
+        // [
+          // "y","y'","y2",
+          // "U","U'","U2",
+          // "R U' R' F R' F' R",
+        // ],
+        [
+          "R' F' R U R U' R' F",
+          "R U' R' F R' F' R",
+          "U' R' F' R U R U' R' F",
+          "U R U' R' F R' F' R",
+        ],
+      ],
+      [
+        [
+          // "U",
+          // "U'",
+          // "U2",
+          "F R U R' U' F'",
+          // "F R' F' R U R U' R'",
+        ],
+      ],
+      [
+        [
+          // "U",
+          // "U'",
+          // "U2",
+          "R U R' U R U2 R'",
+          // "F R' F' R U R U' R'",
+        ],
+      ],
+      [
+        [
+          // "U",
+          // "U'",
+          // "U2",
+          "R U' R U R U R U' R' U' R2",
+          // "F R' F' R U R U' R'",
+        ],
+      ],
+      [
+        [
+          "x' U2 R2 U' L' U R2 U' L U' x",
+          // "F R' F' R U R U' R'",
+        ],
+      ]
+    ]
+
+    for(let i=0;i<Pattern.length;i++){
+      rotas[i].innerHTML = ''
+      if(Pattern[i].length == 0){
+        const D = imgDiv.cloneNode(), I=img.cloneNode()
+        // D.classList.remove("img-div")
+        I.src=`./img/skip.png`
+        I.style.width = `${3 * imgSize.max}px`
+        rotas[i].parentElement.style.height = `${imgSize.max}px`
+        // D.append(I)
+        rotas[i].append(I)
+        continue
+      }
+
+      let len = 0
+      const _p = Pattern[i]
+      for(let s=0;s<_p.length;s++){
+        if(_p[s].length>2){
+          len += 1
+          const D = imgDiv.cloneNode(), I=img.cloneNode()
+          D.classList.remove("img-div")
+          D.classList.add("frame-div")
+          I.src=`./img/(.png`
+          D.append(I)
+          
+          const PatternName = _name.cloneNode()
+          let hit = undefined
+
+          step.forEach((_n, I) => {
+            _n[0].forEach((n, J) => {
+              if(_p[s] == n){
+                hit = [I, J]
+              }
+            })         
+          })
+
+          if(hit != undefined){
+            PatternName.textContent = `${"ABCDEFG"[hit[0]]}${hit[1]+1}`
+            D.append(PatternName)
+          }
+          rotas[i].append(D)
+        }
+
+        for(let j of _p[s].split(" ")){
+          len += 1
+          const D = imgDiv.cloneNode(true), I=img.cloneNode()
+          I.src=`./img/${j}.png`
+          D.append(I)
+          rotas[i].append(D)
+        }
+
+        if(_p[s].length>2){
+          len += 1
+          const D = imgDiv.cloneNode(), I=img.cloneNode()
+          D.classList.remove("img-div")
+          D.classList.add("frame-div")
+          I.src=`./img/).png`
+          D.append(I)
+          rotas[i].append(D)
+        }
+      }      
+      // console.log(`sum_solution [${sum_solution[i].length}]  lineCount [${lineCount}]`)
+
+      // rotas[i].style.width = `${Math.min(len, lineCount) * imgW}px`
+      rotas[i].parentElement.style.height = `${Math.ceil(len / lineCount) * imgW}px`
+
+    }
+    // this.rotImgs = document.querySelectorAll(".ima-div-back")
+    // this.rotImgs = document.querySelectorAll(".rotate-img")
+    this.rotImgs = document.querySelectorAll(".img-div")
+  }
+  _rotesListMake(Pattern){
+    const _list = document.querySelector(".list")
+    const listSize = {
+      w: _list.clientWidth,
+      h: _list.clientHeight,
+    }
 
     this.stepGroupAnimCheck = Array.from({ length: this.groupRotesCube.length }, () => false)
 
@@ -222,8 +412,6 @@ export class motionList{
       ]
     ]
 
-    // console.log(_RotPatterns)
-    const Pattern = _RotPatterns
     for(let i=0;i<Pattern.length;i++){
       rotas[i].innerHTML = ''
       if(Pattern[i].length == 0){
@@ -287,8 +475,37 @@ export class motionList{
     // this.rotImgs = document.querySelectorAll(".ima-div-back")
     // this.rotImgs = document.querySelectorAll(".rotate-img")
     this.rotImgs = document.querySelectorAll(".img-div")
+  }
+  get setData(){
+    return this.#setData
+  }
+  set setData(_d){
+    console.debug(_d)
+    // this.#setData = _d
+  }
+  async ins(_Datas, _color_data, _Rotes, _RotPatterns, animData){
+    this.#setData = _Datas
+    console.log(this.setData)
     
-    // this.full_cube.addEventListener("animation-finished", this.stepAnimationEnd)
+    const _data = Object.keys(animData.data)
+    _data.forEach((e, i)=>{
+      this[e] = animData.data[e]
+    })
+
+    this.animations = {
+      L_hand: "L_hand",
+      R_hand: "R_hand",
+      cube: "full_cube",
+    }
+    this.imgAnimData = animData.anim.img
+    console.log(animData.anim)
+
+    Object.keys(this.animations).forEach((e) => {
+      this.animations[e] = Animation.makeAnimation(animData.anim[this.animations[e]])
+    })
+
+    this.rotesListMake(_RotPatterns)
+  
 
     await wait(100)
 
@@ -407,24 +624,21 @@ export class motionList{
       "co": "cp",
       "ed": "ep",
     }
+
+    if(newStep == -1 || newStep == 16){
+      // console.log("rote_re_start finish")
+      return {is: false, type: "step over"}
+    }
+    this.stepCount = newStep
+
     this.set_ano(
       f[newStep][0].slice(0,2), 
       this.Datas.at(-1)[posName[f[newStep][0].slice(0,2)]][parseInt(f[newStep][0].slice(-2))]
     )
     
-    if(newStep == 16){
-      // console.log("rote_re_start finish")
-      return {skip: true, check: "over"}
-    } 
-    // console.log("next_btn")
-    this.stepCount = newStep
-
     this.step_scroll(this.stepCount)
-    // this.meterBar.style.maxWidth = "0%"
     
     const index = this.stepSkip[this.stepCount]
-
-    // console.log({index})
 
     if(index == -1){
       const _index = this.stepSkip.slice(this.stepCount).find((e)=>e>-1)
@@ -432,9 +646,13 @@ export class motionList{
       else  this.frame(this.stepStartTime[_index]/1000)
 
       this.frameObjSet(this.stepCount)
+      
+      color_set(this.ObjectManager.objects.cube, this.now_color_state)
+      this.grayTile(this.stepCount)
+
       this.learning_btn.style.display = "none"
       // console.log(`rote_re_start skip newId:${_index}`)
-      return {skip: true, }
+      return {is: false, type: "step skip"}
     }
 
     await this.rotImageAnimation2(index)
@@ -460,7 +678,13 @@ export class motionList{
     this.meter_set(index)
     this.frameObjSet(this.stepCount)
     
-    this.learning_btn.style.display = "block"
+
+    color_set(this.ObjectManager.objects.cube, this.now_color_state)
+    this.grayTile(this.stepCount)
+    
+    // this.learning_btn.style.display = "block"
+
+    return {is: true, type: "ok"}
   }
   stepRmoveAnim(){
 		this.AnimeManager.mixersName.cube.remove()
@@ -580,28 +804,14 @@ export class motionList{
     }
 
     this.step_time_meter = new meter({
-      id: this.meterData.area,
-      el: this.meterData.bar,
+      parent: this.meterData.parent,
       start: 0,
       end: this.stepStartTime[index+1] - this.stepStartTime[index],
       value: 0,
       dx: 10,
       constSet: true,
-      callbackfunc: {func1: this, func2: "meter"},
-      count_Disp: false,
+      callbackfunc: this.meter.bind(this),
     })
-
-    // this.step_time_meter = new meter({
-    //   id: this.meterData.area,
-    //   el: this.meterData.bar,
-    //   start: this.stepStartTime[index],
-    //   end: this.stepStartTime[index+1],
-    //   value: this.stepStartTime[index],
-    //   dx: 10,
-    //   constSet: true,
-    //   callbackfunc: {func1: this, func2: "meter"},
-    //   count_Disp: false,
-    // })
   }
   step_scroll(index){
     const _list = document.querySelector(".list")
@@ -668,6 +878,17 @@ export class motionList{
     // console.log({name: `this meter`, Data})
     this.stopTime = Data.value
 
+    // console.log(Data)
+
+    if(Data.type === "mouseup" || Data.type === "touchend"){
+      window.dispatchEvent(new CustomEvent("tutorial", {
+        detail: {
+          type: "user action",
+          name: "meter-use" 
+        }
+      }))
+    }
+
     if(this.step_move){
       // console.log("アニメーション中")  
       clearTimeout(this.timeOutId)
@@ -675,7 +896,8 @@ export class motionList{
       this.stepAnimationPause(index)
       this.stepAnimationPointSet(index, Data.value)
       // this.stepAnimationPointSet(index, Data.value - this.stepStartTime[index])
-      this.step_move = false    
+      this.step_move = false
+      this.play_btn.dataset.state = "play"
       clearInterval(this.ano_upDate_id)
       this.frame(Data.value/1000)
       return
@@ -691,94 +913,182 @@ export class motionList{
   }
   frameObjSet(index){
     const f = [
-      ["ed10"], ["ed09"], ["ed08"], ["ed11"],
-      ["co06"], ["co05"], ["co04"], ["co07"],
-      ["ed02"], ["ed01"], ["ed00"], ["ed03"],
-      ["ed04","ed05","ed06","ed07"],
-      ["co00","co01","co02","co03"],
-      ["ed04","ed05","ed06","ed07"],
-      ["co00","co01","co02","co03"],
-
-      ["co00","co01","co02","co03","co04","co05","co06","co07"],
-      ["ce00","ce01","ce02","ce03","ce04","ce05"],
-      ["ed00","ed01","ed02","ed03","ed04","ed05","ed06","ed07","ed08","ed09","ed10","ed11"],
+      ["ed100"], ["ed090"], ["ed080"], ["ed110"],
+      ["co060"], ["co050"], ["co040"], ["co070"],
+      ["ed020"], ["ed010"], ["ed000"], ["ed030"],
+      ["ed040","ed050","ed060","ed070"],
+      ["co000","co010","co020","co030"],
+      ["ed041","ed051","ed061","ed071"],
+      ["co001","co002", "co011","co012", "co021","co022", "co031","co032"]
     ]
 
-    const F = f[index]
-    const _bone = this.ObjectManager.objects.cube.children
-    const bone = {
-      "ce": _bone.slice(0, 6),
-      "co": _bone.slice(6, 14),
-      "ed": _bone.slice(14),
-    }
-    
-    const baseQua = {
-      "co": [
-        [0,0,0,0],
-        [0,-0.7071067811865476,0,0.7071067811865476],
-        [0,1,0,0],
-        [0,0.7071067811865476,0,0.7071067811865476],
-        [0.7071067811865476,0,0.7071067811865475,0],
-        [0,0,1,0],
-        [0.7071067811865476,0,-0.7071067811865475,0],
-        [1,0,0,0]
-      ],
-      "ce": [
-        [0,0,0,1],
-        [0,-0.7071067811865476,0,0.7071067811865476],
-        [0,1,0,0],
-        [0, 0.7071067811865476,0,0.7071067811865476],
-        [0.7071067811865476,0,0,0.7071067811865476],
-        [-0.7071067811865476,0,0,0.7071067811865476],
-      ],
-      "ed": [
-        [0,0,0,1],
-        [0,0,1,0],
-        [0,1,0,0],
-        [1,0,0,0],
-        [0.5,-0.5,0.5,0.5],
-        [-0,0.7071067811865476,-0.7071067811865475,0],
-        [0.5,0.5,-0.5,0.5],
-        [0.7071067811865475,0,0,0.7071067811865476],
-        [-0.5,-0.5,-0.5,0.5],
-        [0,0.7071067811865475,0.7071067811865476,0],
-        [-0.5,0.5,0.5,0.5],
-        [-0.7071067811865475,0,0,0.7071067811865476],
-      ]
-    }
- 
-    const posName = {
-      "ce": "c",
-      "co": "cp",
-      "ed": "ep",
-    }
+    const mdl_cubes = this.ObjectManager.objects.cube
 
-    const baseframe = {"co": 0, "ed":1, "ce":2}
-
-    // boneNumber.c.indexOf(Datas.c[j]))
-    // bone.ce[0].remove(this.frameObj[0])
     let objes = []
-    F.forEach((e)=>{
-      const type = e.slice(0,2)
-      const number = this.Datas.at(-1)[posName[type]][parseInt(e.slice(-2))]
-      // const number = this.boneNumber[posName[type]]
-      //   .indexOf(this.Datas.at(-1)[posName[type]][parseInt(e.slice(-2))])
-
-      objes.push(bone[type][number])
+    f[index].forEach((e)=>{
+      const _obj = mdl_cubes.getObjectByName(e)
+      objes.push(_obj)
     })
-
-    // console.log({index, F, objes})
 
     this.SceneManager.outlinePass.selectedObjects = objes
   }
+  grayTile(index){
+    const f = [
+      ["ce00", "ce01", "ce02", "ce03", "ce04", "ce05", "ed10"], 
+      ["ed09"], 
+      ["ed08"], 
+      ["ed11"],
+      ["co06"], 
+      ["co05"], 
+      ["co04"], 
+      ["co07"],
+      ["ed02"], 
+      ["ed01"], 
+      ["ed00"], 
+      ["ed03"],
+      ["ed04","ed05","ed06","ed07"],
+      ["co00","co01","co02","co03"],
+      ["ed04","ed05","ed06","ed07"],
+      ["co00","co00", "co01","co01", "co02","co02", "co03","co03"]
+    ]
+
+    const b=[
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11"],
+        m: []
+      },
+
+      
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04","co07"],
+        m: []
+      },
+      
+
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04","co07","ed02"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04","co07","ed02","ed01"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04","co07","ed02","ed01","ed00"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04","co07","ed02","ed01","ed00","ed03"],
+        m: []
+      },
+
+      
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04","co07","ed02","ed01","ed00","ed03",
+            "ed04","ed05","ed06","ed07"],
+        m: []
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04","co07","ed02","ed01","ed00","ed03",
+            "co00","co01","co02","co03"],
+        m: ["ed040","ed050","ed060","ed070"]
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04","co07","ed02","ed01","ed00","ed03",
+        "ed04","ed05","ed06","ed07"],
+        m: ["co000","co010","co020","co030"]
+      },
+      {
+        g: ["ce00","ce01","ce02","ce03","ce04","ce05","ed10","ed09","ed08","ed11","co06","co05","co04","co07","ed02","ed01","ed00","ed03",
+        "ed04","ed05","ed06","ed07","co00","co01","co02","co03"],
+        m: []
+      },
+    ]
+
+    const mdl_cubes = this.ObjectManager.objects.cube
+    const Obj = b[index]
+
+
+    Obj.g.forEach((_obj)=>{
+      const obj = mdl_cubes.getObjectByName(_obj)
+      choice_object_color_set(obj, COLOR_STATE.NORMAL)
+    })
+    Obj.m.forEach((_obj)=>{
+      const obj = mdl_cubes.getObjectByName(_obj)
+      choice_object_color_set(obj, COLOR_STATE.NORMAL)
+    })
+
+    // function traverseWithSkip(object, callback) {
+    //   // コールバックを実行し、結果を受け取る
+    //   // コールバック側で「これ以上下に行かない（スキップ）」なら true を返してもらうルールにする
+    //   const shouldSkipChildren = callback(object);
+      
+    //   if (shouldSkipChildren) {
+    //     return; // ここでリターンすることで、このオブジェクトの children の探索をスキップ！
+    //   }
+
+    //   // スキップしないで下に行く場合は、子要素を再帰的に走査
+    //   for (let i = 0; i < object.children.length; i++) {
+    //     traverseWithSkip(object.children[i], callback);
+    //   }
+    // }
+
+    // traverseWithSkip(mdl_cubes, (obj) => {
+    //   if (obj.type === "Group" && noObj.g.includes(obj.name)) {
+    //     console.log("このグループ以下は探索しません");
+    //     return true; // 下の階層への探索をスキップ
+    //   }
+      
+    //   // 通常の処理
+    //   if (obj.isMesh) {
+    //     // メッシュに対する処理
+    //     obj.material.color = {r: 0.1, g: 0.1, b: 0.1}
+    //   }
+      
+    //   return false; // さらに下の階層も探索を続ける
+    // })
+  }
   async next_btn_func(){
-    if(!this.status())	return
-    if(this.step_move)  return
+    if(!this.status())	return {skip: true, check: "status"}
+    if(this.step_move)  return {skip: true, check: "moving"}
     
     if(this.stepCount == 15)  return {skip: true, check: "over"}
   
     this.stepCount++
-    await this.stepChange(this.stepCount)
+    const res = await this.stepChange(this.stepCount)
+    if(res.is){
+      
+      window.dispatchEvent(new CustomEvent("tutorial", {
+        detail: {
+          type: "user action",
+          name: "step-change-button" 
+        }
+      }))
+    }
   }
   async back_btn_func(){
     if(!this.status())	return
@@ -787,7 +1097,16 @@ export class motionList{
     if(this.stepCount == 0)  return {skip: true, check: "over"}
   
     this.stepCount--
-    await this.stepChange(this.stepCount)
+    const res = await this.stepChange(this.stepCount)
+    if(res.is){
+      
+      window.dispatchEvent(new CustomEvent("tutorial", {
+        detail: {
+          type: "user action",
+          name: "step-change-button" 
+        }
+      }))
+    }
   }
   stop_btn_func(){
     if(!this.status())	return
@@ -806,42 +1125,99 @@ export class motionList{
   
     this.remove_Animation()
     this.step_move = false
+    this.play_btn.dataset.state = "play"
     clearInterval(this.ano_upDate_id)
   
     this.stepAnimationPause(index)
     this.stepAnimationPointSet(index,value)
     this.step_time_meter.animationPause(value)
   }
-  play_btn_func(){
+  async play_btn_func(){
     
     if(!this.status())	return
     if(this.step_move) return
+
   
-    const index = this.stepSkip[this.stepCount]
-    if(index == -1)  return {skip: true, }
-  
-    this.vec = `play`
     this.mode_direction = this.get_speed()
   
-    if(this.stopTime >= this.stepStartTime[index+1] - this.stepStartTime[index]){
+    let index = this.stepSkip[this.stepCount]
+
+    let isTimeEnd = this.stopTime - (this.stepStartTime[index+1] - this.stepStartTime[index])
+
+    if(!this.sequential_isChanged && index == -1){
+      return 
+    }
+    else if(!this.sequential_isChanged && isTimeEnd >= 0){
+      this.step_move = true
+
       this.stopTime = 0
       this.step_time_meter.Update_Value_From_Bar(this.stopTime)
       this.frame(this.stopTime/1000)
     }
+    
+    if(this.sequential_isChanged && index == -1){
+
+      const res = await this.stepChange(this.stepCount+1)
+
+      if(res.is){
+
+        this.step_move = true
+
+        await wait(100)
+
+        index = this.stepSkip[this.stepCount]
+        isTimeEnd = this.stopTime - (this.stepStartTime[index+1] - this.stepStartTime[index])
+      }
+      else {
+        return
+      }
+    }
+    else if(this.sequential_isChanged && isTimeEnd >= 0){
+
+      const res = await this.stepChange(this.stepCount+1)
+
+      if(res.is){
+
+        this.step_move = true
+
+        await wait(100)
+
+        index = this.stepSkip[this.stepCount]
+        isTimeEnd = this.stopTime - (this.stepStartTime[index+1] - this.stepStartTime[index])
+      }
+      else if(res.type === "step over"){
+        this.step_move = true
+
+        this.stopTime = 0
+        this.step_time_meter.Update_Value_From_Bar(this.stopTime)
+        this.frame(this.stopTime/1000)
+      }
+      else {
+        return
+      }
+    }
+    
+    window.dispatchEvent(new CustomEvent("tutorial", {
+      detail: {
+        type: "user action",
+        name: "playback-button" 
+      }
+    }))
+    
+    this.step_move = true
+
+    this.play_btn.dataset.state = "stop"
   
     this.stepAnimationPointSet(index,this.stopTime)
-  
-    this.step_move = true
+
     
     this.ano_upDate_id = setInterval(this.callback, 30)
   
-    // this.animation(
-    //   this.stopTime/1000,
-    //   this.stepStartTime[index+1]/1000, this.get_speed())
     this.animationStart(this.mode_direction)
 
     this.animation_start_time = Date.now()
     this.stepAnimationStart(index, this.mode_direction)
+
     this.step_time_meter.animationPlay(this.stopTime, this.mode_direction)
   }
   reverse_btn_func(){
@@ -851,7 +1227,6 @@ export class motionList{
     const index = this.stepSkip[this.stepCount]
     if(index == -1) return {skip: true, }
   
-    this.vec = `reverse`
     this.mode_direction = -this.get_speed()
   
     if(this.stopTime <= 0){
@@ -935,8 +1310,42 @@ export class motionList{
       // console.log(`step in step return`)
       newStep = e.target.classList[0].slice(4)
     }
+    
+    window.dispatchEvent(new CustomEvent("tutorial", {
+      detail: {
+        type: "user action",
+        name: "step-lists" 
+      }
+    }))
   
     await this.stepChange(parseInt(newStep))
+  }
+  async play_space_key(e){
+
+    if(!this.status())	return
+    if(!this.step_move && e.code == "Space"){
+      this.play_btn_func()
+      return
+    }
+    if(this.step_move && e.code == "Space"){
+      this.stop_btn_func()
+      return
+    }
+    
+  }
+  async toggle_playback_func(){
+
+    if(!this.status())	return
+
+    const state = this.play_btn.dataset.state
+    if(!this.step_move && state === "play"){
+      this.play_btn_func()
+      return
+    }
+    if(this.step_move && state == "stop"){
+      this.stop_btn_func()
+      return
+    }
   }
   dispose(){
     if(!this.status())	return
@@ -949,11 +1358,18 @@ export class motionList{
     this.next_btn.removeEventListener("click", this.next_btn_func)
     this.back_btn.removeEventListener("click", this.back_btn_func)
     this.stop_btn.removeEventListener("click", this.stop_btn_func)
-    this.play_btn.removeEventListener("click", this.play_btn_func)
+    // this.play_btn.removeEventListener("click", this.play_btn_func)
+    this.play_btn.removeEventListener("click", this.toggle_playback_func)
+
     this.reverse_btn.removeEventListener("click", this.reverse_btn_func)
     this.learning_btn.removeEventListener("click", this.learning_btn_func)
     this.stepList.removeEventListener("click", this.stepList_func)
     this.AnimeManager.mixersName.cube.mixer.removeEventListener("finished", this.stepAnimationEnd)
+    
+    this.sequential_checkbox.removeEventListener("change", this.sequential_change_func)
+    this.gray_checkbox.removeEventListener("change", this.cube_gray_change_func)
+
+    window.removeEventListener("keydown", this.play_space_key)
 
     this.step_time_meter.dispose()
     this.step_time_meter = null
@@ -978,16 +1394,33 @@ export class motionList{
       return {skip: true, }
     }
 
-    console.log(`アニメーション  終了`)
-
     const _index = this.mode_direction > 0 ? index+1 : index
   
-    // console.log({func: `animation-finished`, _index})
     this.step_move = false
+    this.play_btn.dataset.state = "play"
 
     clearInterval(this.ano_upDate_id)
 
     this.stopTime = this.stepStartTime[_index] - this.stepStartTime[index]
     this.step_time_meter.animationPause(this.stopTime)
+  }
+  sequential_change_func(event){
+    // 💡 チェックボックスの値は .value ではなく .checked で受け取る（true / false）
+    const isChecked = event.target.checked;
+    this.sequential_isChanged = isChecked
+    
+    // if (isChecked) {
+    //   console.log("連続再生モード：ON");
+    // } else {
+    //   console.log("連続再生モード：OFF");
+    // }
+  }
+  cube_gray_change_func(event){
+    const isChecked = event.target.checked;
+    this.now_color_state = isChecked ? COLOR_STATE.LOW : COLOR_STATE.NORMAL
+
+    
+    color_set(this.ObjectManager.objects.cube, this.now_color_state)
+    this.grayTile(this.stepCount)
   }
 }

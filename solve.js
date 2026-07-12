@@ -1,5 +1,12 @@
 import * as THREE from 'three'
 
+export const COLOR_STATE = {
+	NORMAL: 0,
+	LOW: 1,
+	GRAY: 2,
+	INNER: 3
+}
+
 export class State {
 	/**
 	 * 
@@ -138,6 +145,15 @@ export class State {
 		this.eo = [...newS.eo]
 		this.c 	= [...newS.c]
 	}
+	toJson(){
+		return {
+			cp:[...this.cp],
+			co:[...this.co],
+			ep:[...this.ep],
+			eo:[...this.eo],
+			c:[...this.c],
+		}
+	}
 }
 
 export class cubeState {
@@ -163,10 +179,22 @@ export class cubeState {
 
 	clone(){
 		const _a = new cubeState()
-		_a.cube = this.cube
-		_a.color = this.color
+		_a.cube = this.#cube.copy()
+		_a.color = this.#color.copy()
 
 		return _a
+	}
+	set(_cube, _color){
+		this.cube = _cube
+		this.color = _color
+	}
+	toJson(){
+		const _j = {
+			cube: this.cube.toJson(),
+			color: this.cube.toJson(),
+		}
+
+		return _j
 	}
 }
 
@@ -179,16 +207,33 @@ export const set_color_data = [
 	{r:0.9,g:0.95,b:0},
 ]
 
-// step 12. 14 No
-// const dispCube = new State({
-//   co:[4,5,0,7,3,1,6,2],
-//   co:[2,1,0,0,1,0,0,2],
-//   ep:[11,6,7,1,5,2,3,0,8,9,10,4],
-//   eo:[0,0,0,1,0,1,1,0,0,0,0,1],
-//   c:[0,1,2,3,4,5],
-// })
+export const color_list = {
+	0 : [
+		"#0012c4",
+		"#e70000",
+		"#17b118",
+		"#ff8c00",
+		"#e9e9e9",
+		"#f0df11"
+	],
+	1: [
+		"#121748",
+		"#4d1b1b",
+		"#174117",
+		"#473218",
+		"#545454",
+		"#585426"
+	],
+	2: "#323131",
+	3: "#302c2a",
+}
 
-export function color_set(color_data, _obj){
+/**
+ * 
+ * @param {State.c} color_data 
+ * @param {THREE.Object3D} _obj 
+ */
+export function cube_object_color_data_set(color_data, _obj){
 	let obj = null
 	_obj.traverse( (child) => {
 		if(child.name == "root") {
@@ -196,63 +241,130 @@ export function color_set(color_data, _obj){
 		}
 	})
 	const model = obj.children
-	// console.log({model, sc_st, color_data, qua: cubesetData(sc_st)})
 	
 	const color_c = [
-		[4,3,0],
-		[4,0,1],
-		[4,1,2],
-		[4,2,3],
-		[5,0,3],
-		[5,1,0],
-		[5,2,1],
-		[5,3,2],
+		[4,3,0],		[4,0,1],		[4,1,2],		[4,2,3],
+		[5,0,3],		[5,1,0],		[5,2,1],		[5,3,2],
 	]
 
 	const color_e = [
-		[0,3],
-		[0,1],
-		[2,1],
-		[2,3],
-		[4,0],
-		[4,1],
-		[4,2],
-		[4,3],
-		[5,0],
-		[5,1],
-		[5,2],
-		[5,3],
+		[0,3],		[0,1],		[2,1],		[2,3],
+		[4,0],		[4,1],		[4,2],		[4,3],
+		[5,0],		[5,1],		[5,2],		[5,3],
 	]
 
 	const color_cn = [
-		[0],
-		[1],
-		[2],
-		[3],
-		[4],
-		[5],
+		[0],		[1],		[2],		[3],		[4],		[5],
 	]
 
 	const center = model.slice(0,6)
 	const corner = model.slice(6,14)
 	const edge = model.slice(14)
+	
+	// const {r, g, b} = set_color_data[color_data[color_c[i][s]]]
+
+	const _gray = color_list[COLOR_STATE.GRAY]
+	const _inner = color_list[COLOR_STATE.INNER]
 
 	for(let i=0;i<corner.length;i++){
 		let F = corner[i].children
-		for(let s=0;s<3;s++)
-			F[s+1].material.color = set_color_data[color_data[color_c[i][s]]]
+		for(let j=0;j<3;j++){
+			const _normal = color_list[COLOR_STATE.NORMAL][color_data[color_c[i][j]]]
+			const _low = color_list[COLOR_STATE.LOW][color_data[color_c[i][j]]]
+
+			const colors = {}
+			colors[COLOR_STATE.NORMAL] = new THREE.Color().setStyle(_normal)
+			colors[COLOR_STATE.GRAY] = new THREE.Color().setStyle(_gray)
+			colors[COLOR_STATE.LOW] = new THREE.Color().setStyle(_low)
+			F[j+1].material.userData.colors = colors
+		}
+		
+		const colors = {}
+		colors[COLOR_STATE.NORMAL] = new THREE.Color().setStyle(_inner)
+		F[0].material.userData.colors = colors
 	}
 
 	for(let i=0;i<center.length;i++){
 		let F = center[i].children
-	  F[1].material.color = set_color_data[color_data[color_cn[i][0]]]
+
+		const _normal = color_list[COLOR_STATE.NORMAL][color_data[color_cn[i][0]]]
+		const _low = color_list[COLOR_STATE.LOW][color_data[color_cn[i][0]]]
+
+		const colors = {}
+		colors[COLOR_STATE.NORMAL] = new THREE.Color().setStyle(_normal)
+		colors[COLOR_STATE.GRAY] = new THREE.Color().setStyle(_gray)
+		colors[COLOR_STATE.LOW] = new THREE.Color().setStyle(_low)
+		F[1].material.userData.colors = colors
+
+		const colorsg = {}
+		colorsg[COLOR_STATE.NORMAL] = new THREE.Color().setStyle(_inner)
+		F[0].material.userData.colors = colorsg
 	}
 
 	for(let i=0;i<edge.length;i++){
 		let F = edge[i].children
-		for(let s=0;s<2;s++)
-	  	F[s+1].material.color = set_color_data[color_data[color_e[i][s]]]
+		for(let j=0;j<2;j++){
+			
+			const _normal = color_list[COLOR_STATE.NORMAL][color_data[color_e[i][j]]]
+			const _low = color_list[COLOR_STATE.LOW][color_data[color_e[i][j]]]
+
+			const colors = {}
+			colors[COLOR_STATE.NORMAL] = new THREE.Color().setStyle(_normal)
+			colors[COLOR_STATE.GRAY] = new THREE.Color().setStyle(_gray)
+			colors[COLOR_STATE.LOW] = new THREE.Color().setStyle(_low)
+			F[j+1].material.userData.colors = colors
+		}
+		
+		const colors = {}
+		colors[COLOR_STATE.NORMAL] = new THREE.Color().setStyle(_inner)
+		F[0].material.userData.colors = colors
 	}
+}
+/**
+ * 
+ * @param {THREE.Object3D} _obj 
+ * @param {COLOR_STATE} type 
+ */
+export function color_set(_obj, type){
+	let obj = null
+	_obj.traverse( (child) => {
+		if(child.name == "root") {
+			obj = child
+		}
+	})
+	const models = obj.children
+
+	models.forEach((_obj)=>{
+		let meshs = _obj.children
+		meshs.forEach((mesh)=>{
+			mesh_color_set(mesh, type)
+		})
+	})
+}
+
+/**
+ * 
+ * @param {THREE.Mesh} _obj 
+ * @param {COLOR_STATE} type 
+ */
+export function mesh_color_set(mesh, type){
+	const colors = mesh.material.userData.colors
+	mesh.material.color = colors[type] != undefined ? colors[type] : colors[COLOR_STATE.NORMAL]
+}
+
+export function choice_object_color_set(_obj, type){
+	let objs = []
+
+	if(_obj.type === "Group"){
+		objs = _obj.children
+	}
+	else if(_obj.type === "Mesh"){
+		objs = [_obj]
+	}
+
+	objs.forEach((_o)=>{
+		mesh_color_set(_o, type)
+	})
 }
 
 export function cube_Full_Animation_Make(Datas, clip){

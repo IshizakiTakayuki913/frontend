@@ -1,15 +1,24 @@
 export class meter{
   constructor(data = {}){
-    // id,el, f0, f1, value, constSet, callbackfunc, num = undefined,
-    this.id = data.id
-    this.el = data.el
+    // parent, f0, f1, value, constSet, callbackfunc, num = undefined,
+    this.parent = data.parent
+
+    this.id = document.createElement("div")
+    this.id.classList.add("meter-out")
+
+    this.el = document.createElement("div")
+    this.el.classList.add("meter-in")
+
+    this.parent.appendChild(this.id)
+    this.id.appendChild(this.el)
+
     this.meter_on = false
     this.f0 = data.start
     this.f1 = data.end
     this.value = data.value
     this.maps = Math.abs(this.f1 - this.f0)
     this.dx = data.dx || Math.abs(data.end - data.start) / 10
-    this.count_Disp = data.count_Disp
+    this.count_Disp = data.count_Disp || false
     this.callbackfunc = data.callbackfunc
     this._meterMode = true
 
@@ -21,8 +30,8 @@ export class meter{
     this.touch_id = undefined
     this.touch = false
     
-    if(this.count_Disp != false){
-      this.count_Disp.dataset.value = Number.parseFloat(this.value).toFixed(1)
+    if(this.count_Disp){
+      this.id.dataset.value = Number.parseFloat(this.value).toFixed(1)
     }
 
     this.mousedown = (e)=>{
@@ -31,16 +40,32 @@ export class meter{
       if(this.meter_on) return
       // console.log("mousedown")
       this.meter_on=true
-      this.meter_updata(e)
+      const {isCall} = this.meter_updata(e)
+      if(isCall) this.callbackfunc({
+        id:this.id,
+        value:this.value, 
+        type: "mousedown"
+      })
     }
     this.mouseup = (e)=>{
       if(!this.meter_on) return
       this.meter_on=false
+      this.callbackfunc({
+        id:this.id,
+        value:this.value, 
+        type: "mouseup"
+      })
     }
     this.mousemove = (e)=>{
       if(!e.currentTarget.tagName=="BODY")  return
       if(!this.meter_on) return
-      this.meter_updata(e)
+
+      const {isCall} = this.meter_updata(e)
+      if(isCall) this.callbackfunc({
+        id:this.id,
+        value:this.value, 
+        type: "mousemove"
+      })
     }
     this.touchstart = (e)=>{
   // console.log(e.touches[0].target)
@@ -56,8 +81,12 @@ export class meter{
         return
       }
 
-      this.meter_updata({clientX:e.touches[0].clientX})
-      
+      const {isCall} = this.meter_updata({clientX:e.touches[0].clientX})
+      if(isCall) this.callbackfunc({
+        id:this.id,
+        value:this.value, 
+        type: "touchstart"
+      })
     }
     this.touchend = (e)=>{
       if(e.changedTouches[0].identifier == this.touch_id){
@@ -65,16 +94,33 @@ export class meter{
         this.meter_on=false
         this.touch = false
         this.touch_id = undefined
+
+        this.callbackfunc({
+        id:this.id,
+        value:this.value, 
+        type: "touchend"
+      })
       }
     }
     this.touchmove = (e)=>{
       if(!(this.meter_on &&  this.touch)) return 
       
-      this.meter_updata({clientX:e.touches[0].clientX})
+      const {isCall} = this.meter_updata({clientX:e.touches[0].clientX})
+      if(isCall) this.callbackfunc({
+        id:this.id,
+        value:this.value, 
+        type: "touchmove"
+      })
     }
     this.wheel = (e)=>{
       if(this.meter_on) return
-      this.wheel_meter_updata(e)
+      
+      const {isCall} = this.wheel_meter_updata(e)
+      if(isCall) this.callbackfunc({
+        id:this.id,
+        value:this.value, 
+        type: "wheel"
+      })
     }
     
     this.id.addEventListener("mousedown", this.mousedown)
@@ -89,7 +135,7 @@ export class meter{
 
     document.addEventListener("touchmove", this.touchmove, { passive: false })
     
-    this.id.parentElement.addEventListener("wheel", this.wheel, { passive: false })
+    this.parent.addEventListener("wheel", this.wheel, { passive: false })
   }
   get meterMode(){
     return this._meterMode
@@ -118,7 +164,7 @@ export class meter{
     return
   }
   meter_updata(e){
-    if(this.meterMode) return
+    if(this.meterMode) return {isCall: false}
     if(this.anim.playState == `running`)  this.anim.pause()
 
     const _percent = (e.clientX - this.id.getBoundingClientRect().left ) / this.id.offsetWidth
@@ -129,16 +175,16 @@ export class meter{
 
     const fx = (this.f1 - this.f0) * percent + this.f0
 
-    if(this.count_Disp != false)  this.count_Disp.dataset.value = Number.parseFloat(fx).toFixed(1)
+    if(this.count_Disp != false)  this.id.dataset.value = Number.parseFloat(fx).toFixed(1)
 
     if(this.value != fx){
       this.value = fx
-      // this.callbackfunc({id:this.id, value:this.value})
-      this.callbackfunc.func1[this.callbackfunc.func2]({id:this.id, value:this.value})
+      return {isCall: true}
     }
+    return {isCall: false}
   }
   wheel_meter_updata(e){
-    if(this.meterMode) return
+    if(this.meterMode)  return {isCall: false}
     const b=this.id.children[0]
     const mi = Math.min(this.f0, this.f1), ma = Math.max(this.f0, this.f1)
 
@@ -146,19 +192,22 @@ export class meter{
 
     if(e.wheelDeltaY != 0 && this.value == wheel){
       // console.log("wheel_meter_updata 同じ")
-      return
+      return {isCall: false}
     }
-      if(this.count_Disp != false)  this.count_Disp.dataset.value = Number.parseFloat(wheel).toFixed(1)
+      if(this.count_Disp != false)  this.id.dataset.value = Number.parseFloat(wheel).toFixed(1)
 
     this.value = wheel
     this.anim.currentTime = wheel - this.f0
-    this.callbackfunc.func1[this.callbackfunc.func2]({id:this.id, value:this.value})
-    // console.log({wheel, maxW, offsetWidth:this.id.offsetWidth, percent, maxW})
-    // console.log({min:0, max:maxW, X, num:Math.max(Math.min(X, maxW), 0),fx})
+  
+    return {isCall: true}
   }
   Update_Bar_From_Value(){
     this.value = this.anim.currentTime + this.f0
-    this.callbackfunc.func1[this.callbackfunc.func2]({id: this.id, value: this.value})
+    this.callbackfunc({
+        id:this.id,
+        value:this.value, 
+        type: "animate"
+      })
   }
   Update_Value_From_Bar(_value){
     const value = this.map(this.f0, this.f1, 0, this.maps, _value)
@@ -196,8 +245,7 @@ export class meter{
     this.id.removeEventListener("touchstart", this.touchstart)
     document.removeEventListener("touchend", this.touchend)
     document.removeEventListener("touchmove", this.touchmove)
-    this.id.parentElement.removeEventListener("wheel", this.wheel)
-    
-    // console.log(`removeevent`)
+    this.parent.removeEventListener("wheel", this.wheel)
+    this.parent.removeChild(this.id)
   }
 }

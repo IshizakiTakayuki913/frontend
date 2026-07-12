@@ -10,7 +10,7 @@ export class camera {
 	scene = null
 	camOut = null
 	weelTime = 0
-	#angle = {x: 0, y:0, z: 0 ,r: 5}
+	#angle = {x: 0, y:0 ,r: 5}
 	// #angle = new THREE.Rotation()
 	
 	constructor(_data = {scene: null, camOut: null,
@@ -58,7 +58,10 @@ export class camera {
 		this.wheel = this.wheel.bind(this)
 		this.scene.addEventListener('wheel', this.wheel, { passive: false })
 
+		this.angle = {x: -0.55, y:0.61}
     this.syncuser = new syncuser()
+
+		
 	}
 	get angle(){
 		return this.#angle
@@ -84,15 +87,9 @@ export class camera {
 		
 		this.camOut.lookAt(new THREE.Vector3(0, 0, 0))
 
-		this.syncuser.manual(this.#angle)
+		if(this.syncuser != undefined) this.syncuser.manual(this.#angle)
 
 		this.callback(this.#angle)
-		// this.camOut.position.x = Math.sin(this.#angle.y) * Math.cos(this.#angle.x)
-		// this.camOut.position.y = Math.sin(-this.#angle.x)
-		// this.camOut.position.z = Math.cos(this.#angle.y) * Math.cos(this.#angle.x)
-		// this.camOut.lookAt(new THREE.Vector3(0, 0, 0))
-
-		// this.syncuser.manual([...this.camOut.position])
 	}
 	mouseDown(e){
 		if(!this.status()) return

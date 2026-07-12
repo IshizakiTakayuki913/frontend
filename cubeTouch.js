@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 
-
 import { meter } from './meter.js'
 import {ObjectManager} from './Object.js'
 import {SceneManager} from './SceneManager.js'
@@ -14,11 +13,12 @@ import {motionList} from './motionList.js'
 
 import {AnnotationManager, SVGAnnotation} from './annotation.js'
 
-
 import {TutorialManager} from './tutorial.js'
 
+import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@4.0.4/+esm';
+
 import {
-  State, cubeState, color_set,
+  State, cubeState, color_set, choice_object_color_set, cube_object_color_data_set, COLOR_STATE,
   cubeset, wait,
   objectPrint, positionGet, modelIndex
 } from './solve.js'
@@ -31,7 +31,11 @@ window.THREE = THREE
 window.color_set = color_set
 window.cubeset = cubeset
 window.objectPrint = objectPrint
+window.choice_object_color_set = choice_object_color_set
+window.cube_object_color_data_set = cube_object_color_data_set
+window.SVGAnnotation = SVGAnnotation
 
+window.cubeState = cubeState
 
 class cubemode{
   #cubeHolding = true
@@ -59,6 +63,8 @@ class cubemode{
   ano_obj = null
   ano_obj_type = null
 
+  #isLoad = false
+
 	constructor() {
     this.currentState = cubemode.STATE_INIT
     this.currentFlags = 0
@@ -82,27 +88,10 @@ class cubemode{
       [cubemode.STATE_INIT]:   [cubemode.STATE_EXPLORE],
       [cubemode.STATE_EXPLORE]:   [cubemode.STATE_EDITING, cubemode.STATE_ANALYZING],
       [cubemode.STATE_EDITING]:   [cubemode.STATE_EXPLORE],
-      [cubemode.STATE_ANALYZING]: [cubemode.STATE_GUIDING],
+      [cubemode.STATE_ANALYZING]: [cubemode.STATE_EXPLORE, cubemode.STATE_GUIDING],
       [cubemode.STATE_GUIDING]:   [cubemode.STATE_PRACTICE, cubemode.STATE_EXPLORE],
       [cubemode.STATE_PRACTICE]:  [cubemode.STATE_GUIDING]
     };
-
-    
-    const _svg = document.createElementNS(svgNS, "svg");
-    document.querySelector("body").appendChild(_svg)
-    _svg.id = "annotation-svg"
-    _svg.classList.add("ui-overlay")
-    
-
-    this.AnnotationManager = new AnnotationManager(_svg)
-    this.anoMap = {}
-
-    this.TutorialManager = new TutorialManager(
-      _svg, this.AnnotationManager,
-      this.openMenuFolder. bind(this)
-    )
-
-    this.AnnotationManager.loadingIconSet()
 
     this.fileLoaded = this.fileLoaded.bind(this)
     window.addEventListener("load", this.fileLoaded)
@@ -124,6 +113,9 @@ class cubemode{
       return false
     }
   }
+  set isLoad(_is){
+
+  }
   /**
    * 状態の遷移を行う　また、遷移で機能するサブクラスのＯＮ・ＯＦＦを行う
    * @param {number} nextState STATE 次に遷移予定の状態
@@ -140,7 +132,7 @@ class cubemode{
     const activated = nextFlags & diff;
     const deactivated = oldFlags & diff;
 
-    console.log({activated, deactivated})
+    // console.log({activated, deactivated})
 
     // 3. 各機能のON/OFFを実行
     this.initializ(deactivated, false);
@@ -243,7 +235,10 @@ class cubemode{
           Change_Practice: this.func_Change_Practice.bind(this),
           get_speed: () => { return this.rote_speed},
           set_ano: this.set_ano.bind(this),
-          callback: this.upDate_view.bind(this)
+          callback: this.upDate_view.bind(this),
+          sequential_checkbox: this.sequential_play_checkbox,
+          gray_checkbox: this.cube_color_checkbox,
+          disp: this._main,
         })
       }
     }
@@ -265,38 +260,17 @@ class cubemode{
    * メインのファイルを読み込まれた際に呼び出される
    * ここで初期環境の構築を行う
    */
+
   async fileLoaded(){
     console.log("すべてのリソース（画像・CSS・JS）が読み込み完了！")
     window.removeEventListener("load", this.fileLoaded)
 
-    // const canvas = document.createElement("canvas")
-    // canvas.id="icon"
-    // canvas.style.width = "40vmin"
-    // canvas.style.height = "40vmin"
-    // canvas.classList.add("load-icon")
-
-    // const ctx = canvas.getContext("2d")
-    // canvas.width = 300
-    // canvas.height = 300
-    // const w = 300
-    // ctx.lineWidth = w/10
-    // let fanwisegradient = ctx.createConicGradient(-0.2, w/2, w/2);
-    // fanwisegradient.addColorStop(0,   '#000');
-    // fanwisegradient.addColorStop(0.3, '#000');
-    // fanwisegradient.addColorStop(0.6, '#fff');
-    // fanwisegradient.addColorStop(0.8, '#CCCCCC00');
-    // ctx.strokeStyle = fanwisegradient;
-    // ctx.lineCap = "round";
-    // ctx.beginPath()
-    // ctx.arc(w/2, w/2, w/2-ctx.lineWidth/2, 0, 1.6*Math.PI)
-    // ctx.stroke()
-
-    // document.querySelector("body").appendChild(canvas)
-    // this.icon = canvas
 
     // const iframe = document.getElementById('iframe')
     // iframe.width = 100
     // iframe.height = 100
+
+    this.grids = document.querySelector("#grids")
 
 
     const map = document.getElementsByClassName('sulves-map')[0]
@@ -314,40 +288,9 @@ class cubemode{
       list.append(line.cloneNode(true))
 
     map.append(list)
+    map.insertBefore(list, map.firstChild)
 
-    const folderTile = Object.values(document.getElementsByClassName("folder"))
-    
-    for(let i=0; i<folderTile.length; i++){
-
-      folderTile[i].style.maxHeight = `${folderTile[i].scrollHeight}px`
-
-      folderTile[i].querySelector(".folder-tile")
-      .addEventListener("click", (e) => {
-        if(e.target.parentElement !== folderTile[i]) return
-
-        if(folderTile[0].classList.value.includes("tutorial-targeting"))  return
-
-        if(folderTile[i].classList.value.includes("clause-folder")){
-          folderTile[i].classList.remove('clause-folder')
-        }
-        else{
-          folderTile[i].classList.add('clause-folder')
-        }
-      })
-    }
-
-    this.menuFolders = folderTile
-    this.tree = [
-      -1,
-      0,
-      1,
-      0,
-      3,
-      4,
-      4,
-      0
-    ]
-
+    this.menuFolderMake()
     
     this.calculation_set_buttont = document.getElementsByClassName("function-calculation-set-buttont")[0]
     this.func_calculation_set_buttont = this.func_calculation_set_buttont.bind(this)
@@ -363,30 +306,58 @@ class cubemode{
     this.func_fullscreen_buttont = this.func_fullscreen_buttont.bind(this)
 		this.fullscreen_buttont.addEventListener('click', this.func_fullscreen_buttont)
 
+    
+    this.sequential_play_checkbox = document.querySelector(".sequential-play-checkbox > input")
+
+    this.cube_color_checkbox = document.querySelector(".cube-color-checkbox > input")
+
     this.rote_speed_metar = new meter({
-      id: document.querySelector(`.spped-meter`),
-      el: document.querySelector(`.spped-meter .meter-in`),
+      parent: document.querySelector(`.spped-meter`),
       start: 0.2,
       end: 6,
       value: 4,
       dx: 0.2,
       constSet: true,
-      callbackfunc: {func1: this, func2: "meter1"},
-      count_Disp: document.querySelector(`.spped-meter`),
+      callbackfunc: this.meter1.bind(this),
+      count_Disp: true,
     })
 
     this.hnd_opacity_metar = new meter({
-      id: document.querySelector(`.hand-opacity-meter`),
-      el: document.querySelector(`.hand-opacity-meter .meter-in`),
+      parent: document.querySelector(`.hand-opacity-meter`),
       start: 0,
       end: 1,
       value: 1,
       dx: 0.1,
       constSet: false,
-      callbackfunc: {func1: this, func2: "meter2"},
-      count_Disp: document.querySelector(`.hand-opacity-meter`),
+      callbackfunc: this.meter2.bind(this),
+      count_Disp: true,
     })
     
+    const folderTile = Object.values(document.getElementsByClassName("folder"))
+    for(let i=0; i<folderTile.length; i++){
+      folderTile[i].style.maxHeight = `${folderTile[i].scrollHeight}px`
+
+      if(folderTile[i].children.length <= 2){
+        folderTile[i].classList.add("single")
+        continue
+      }
+
+      folderTile[i].querySelector(".folder-tile")
+      .addEventListener("click", (e) => {
+        if(e.target.parentElement !== folderTile[i]) return
+
+        if(folderTile[0].classList.value.includes("tutorial-targeting"))  return
+
+        if(folderTile[i].classList.value.includes("clause-folder")){
+          folderTile[i].classList.remove('clause-folder')
+        }
+        else{
+          folderTile[i].classList.add('clause-folder')
+        }
+      })
+    }
+    this.menuFolders = folderTile
+
     const objMan = new ObjectManager()
     const isLoad = await objMan.load([
       {name: "setcube", modelPath: "./model/sample.glb"},
@@ -398,7 +369,7 @@ class cubemode{
 
     const mainCanvas = document.createElement("canvas")
     mainCanvas.id = "main-canvas"
-    mainCanvas.classList.add("main-display")
+
     const _main = document.querySelector("#main-display")
     _main.appendChild(mainCanvas)
     this._main = _main
@@ -475,36 +446,75 @@ class cubemode{
     //   eo:[0,0,0,1,0,1,1,0,0,0,0,1],
     //   c:[0,1,2,3,4,5],
     // }))
-    
-    color_set(this.dispCube.color.c, objMan.objects.cube)
+    cube_object_color_data_set(this.dispCube.color.c, objMan.objects.cube)
+    color_set(objMan.objects.cube, COLOR_STATE.NORMAL)
     cubeset(objMan.objects.cube, this.dispCube.cube)
     
     this.#cubeHolding  = false 
 
+    this.anoMap = {}
+    
     this.changeState(cubemode.STATE_EXPLORE)
 
-    // const ano_mes = document.createElement("div")
-    // ano_mes.id = "ano-mes"
-    // ano_mes.classList.add("annotation-message")
-    // this._main.appendChild(ano_mes)
 
-    // this.ano_mes = ano_mes
+    await wait(1000)
+    
+    const _svg = document.querySelector("#annotation-svg")
+    const firstIcon = _svg.querySelector("#first-icon")
 
-    // this.setupSVG()
+    this.AnnotationManager = new AnnotationManager(_svg)
 
-    await wait(5000)
-    this.AnnotationManager.svg.style.setProperty('--theme-color', '#010a26e2');
-    this.AnnotationManager.loadingIconRemove()
+    this.TutorialManager = new TutorialManager(
+      _svg, this.AnnotationManager,
+      this.openMenuFolder. bind(this)
+    )
+    
+    _svg.removeChild(firstIcon)
+    _svg.classList.remove("first-loading-ui-overlay")
 
-    this.TutorialManager.start()
+    
+    await wait(300)
 
+    const db = new Dexie('RubiksCubeAppDB');
+    db.version(1).stores({
+      guids: 'id'
+    });
+
+    this.db = db
+
+    this.TutorialManager.next(0)
+  }
+  async addNewAnimation(animationData) {
+    try {
+      // 1. 現在のデータ件数を取得
+      const currentCount = await this.db.guids.count();
+      
+      // 2. 新しいデータのためのインデックス・IDを決定
+      // (例: 件数が0なら 'anim-1'、件数が5なら 'anim-6' になるようにする)
+      const newId = `${currentCount + 1}`;
+      
+      // 3. データを追加 (put または add)
+      await this.db.guids.put({
+        id: 1,
+        data: animationData,
+        time: new Date()
+      });
+
+      console.log(`保存データを更新しました`);
+
+      return {save: true}
+    } catch (error) {
+      console.error('保存データの更新に失敗しました:', error);
+      return {save: false}
+    }
+    return {save: false}
   }
   async openMenuFolder(_el){
    const _folder = _el.closest(".folder")
 
     const index = this.menuFolders.findIndex((_el)=>{return _el===_folder})
     let isCloues = false
-    console.log({_folder, index})
+    
     for(let i=index; i!=-1;){
       if(this.menuFolders[i].classList.value.includes("clause-folder")){
         this.menuFolders[i].classList.remove('clause-folder')
@@ -522,7 +532,6 @@ class cubemode{
    * @param {number} index キューブのパーツ内のインデックス
    */
   set_ano(type,index){
-    console.log({type,index})
     this.ano_obj = this.ObjectManager.objects.cube.children[modelIndex(type,index)]
     this.ano_obj_type = type
   }
@@ -745,6 +754,9 @@ class cubemode{
    * @param {number} data 透明度の値
    */
   meter2(data){
+    const t = data.value
+    const value = t * t
+
     const Lhand = this.ObjectManager.objects.handL
     const Rhand = this.ObjectManager.objects.handR
 
@@ -752,13 +764,13 @@ class cubemode{
     Lhand.traverse( (child) => {
       if(child.type == "SkinnedMesh") {
         // child.material.transparent = true
-        child.material.opacity = data.value
+        child.material.opacity = value
       }
     })
     Rhand.traverse( (child) => {
       if(child.type == "SkinnedMesh") {
         // child.material.transparent = true
-        child.material.opacity = data.value
+        child.material.opacity = value
       }
     })
   }
@@ -812,7 +824,8 @@ class cubemode{
     this.dispCube.color.set(new State())
 
     cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
-    color_set(this.dispCube.color.c, this.ObjectManager.objects.cube)
+    cube_object_color_data_set(this.dispCube.color.c, this.ObjectManager.objects.cube)
+    color_set(this.ObjectManager.objects.cube, COLOR_STATE.NORMAL)
     
     this.changeState(cubemode.STATE_EXPLORE)
 
@@ -842,40 +855,24 @@ class cubemode{
         }
       }));
 
-
+      const isChange = await this.sendDataToAzure()
+      
       await wait(1000)
 
-      const time = Date.now()
+      if(!isChange){
+        this.AnnotationManager.loadingIconRemove()
 
-      const reqData = {ss: this.dispCube.cube, cd: this.dispCube.color.c}
-      const request = await fetch(
-        // 'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010', {
-        'http://localhost:7071/api/CubeSovleFunction010', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              // 'x-api-key': 'qwaszx'
-          },
-          body: JSON.stringify(reqData)
-      })
+        window.dispatchEvent(new CustomEvent("tutorial", {
+          detail: {
+            "type": "user action",
+            "name": "calculation-response-interruption",
+          }
+        }));
+        
+        const is = this.changeState(cubemode.STATE_EXPLORE)
 
-      console.log(request)
-
-      const response = await request.json()
-      console.log(response)
-
-      const { res_cd, res_sl, res_tk, amime } = response.inf
-
-
-      this.saveCube = this.dispCube.clone()
-
-      console.log(this.timeList)
-
-      await this.timeList.ins(this.dispCube.cube.copy(), res_cd, res_sl, res_tk, amime)
-
-      localStorage.setItem("json", localStorage.getItem("json")+" "+(Date.now() - time))
-      
-      await wait(5000)
+        return
+      }
 
       const is = this.changeState(cubemode.STATE_GUIDING)
 
@@ -883,6 +880,10 @@ class cubemode{
       
       this.ObjectManager.objects.handL.visible = true
       this.ObjectManager.objects.handR.visible = true
+      
+      this.SceneManager.nowBdAspectType = "hand"
+      this.grids.dataset.state = "GUIDING"
+      this.Viewpoint.angle = {r: this.SceneManager.BdAspect.hand.dist}
 
       if(is){
         this.AnnotationManager.loadingIconRemove()
@@ -920,8 +921,87 @@ class cubemode{
       this.dispCube.cube.set(this.saveCube.cube)
       this.dispCube.color.set(this.saveCube.color)
 
+      cube_object_color_data_set(this.dispCube.color.c, this.ObjectManager.objects.cube)
       cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
+      color_set(this.ObjectManager.objects.cube, COLOR_STATE.NORMAL)
+
+      this.SceneManager.nowBdAspectType = "normal"
+      this.grids.dataset.state = "EXPLORE"
+      this.Viewpoint.angle = {r: this.SceneManager.BdAspect.normal.dist}
     }
+  }
+  /**
+   * 
+   */
+  async sendDataToAzure() {
+    try {
+      const reqData = {ss: this.dispCube.cube, cd: this.dispCube.color.c}
+      const time = Date.now();
+
+      const response = await fetch(
+        'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reqData),
+          signal: AbortSignal.timeout(5000) 
+        },
+      )
+    
+      if (!response.ok) {
+
+        if (response.status === 405) {
+          const result = await response.json();
+          throw new Error(`サーバーエラーが発生しました (Status: ${response.status})`);
+        }
+      }
+
+      // 3. 通信が【成功】した場合の処理
+      const result = await response.json();
+      const { res_cd, res_sl, res_tk, amime } = result.inf
+
+      this.nowGuidData = JSON.parse(JSON.stringify({
+        dispCube: this.dispCube.toJson(),
+        res_cd, res_sl, res_tk, amime
+      }))
+
+      this.saveCube = this.dispCube.clone()
+      await this.timeList.ins(this.dispCube.toJson(), res_cd, res_sl, res_tk, amime)
+
+
+      return true
+
+    } catch (error) {
+      console.error("通信に失敗しました:", error)
+
+      const currentCount = await this.db.guids.count()
+
+      if(currentCount == 0){
+        console.log(`解説データのsave 無し`)
+        return false
+      }
+
+      const cachedRecord = await this.db.guids.get(1)
+
+      if (cachedRecord) {
+        const {data} = cachedRecord
+
+        this.saveCube = this.dispCube.clone()
+        console.log(data.dispCube)
+        await this.timeList.ins(this.dispCube.toJson(), data.res_cd, data.res_sl, data.res_tk, data.amime)
+
+        return true // 4MBのデータをそのまま返す
+      
+      }
+
+      return false
+    }
+
+    return false
+  }
+  save_guid_data(){
+    if(this.nowGuidData === null) return
+    this.addNewAnimation(this.nowGuidData)
   }
   /**
    * ボタン　色入力の使用
@@ -944,7 +1024,8 @@ class cubemode{
       if(!is) return
       
       cubeset(this.ObjectManager.objects.cube, this.dispCube.cube)
-      color_set(this.dispCube.color.c, this.ObjectManager.objects.cube)
+      cube_object_color_data_set(this.dispCube.color.c, this.ObjectManager.objects.cube)
+      color_set(this.ObjectManager.objects.cube, COLOR_STATE.NORMAL)
 
       const event = new CustomEvent("tutorial", {
         detail: {
@@ -982,7 +1063,179 @@ class cubemode{
       document.exitFullscreen();
     }
   }
+  menuFolderMake(){
+    const _folder = document.createElement("div")
+    _folder.classList.add("folder")
+
+    const _folderTile = document.createElement("div")
+    _folderTile.classList.add("folder-tile")
+
+    const _tile = document.createElement("p")
+    _tile.innerText = "tile"
+
+    _folderTile.appendChild(_tile)
+    _folder.appendChild(_folderTile)
+
+    
+    const _folderButton = document.createElement("div")
+    const _button = document.createElement("button")
+    _button.innerText = "実行"
+    _folderButton.appendChild(_button)
+
+    const _folderMeter = document.createElement("div")
+    
+    const _folderCheckbox = document.createElement("div")
+    const _cInput = document.createElement("input")
+    const _cLabel = document.createElement("label")
+    _folderCheckbox.appendChild(_cInput)
+    _folderCheckbox.appendChild(_cLabel)
+
+    _cInput.type="checkbox"
+
+
+    let tree = []
+
+    function folderLoop(key, id) {
+      // console.log({key})
+
+      const _f = root[key]
+      if(_f === undefined)  return 0
+
+      if(_f.type === "button"){
+        const el = _folderButton.cloneNode(true)
+        const button = el.querySelector("button")
+        button.classList.add(_f.class)
+        button.innerText = _f.tile || "実行"
+        return el
+      }
+      if(_f.type === "meter"){
+        const el = _folderMeter.cloneNode(true)
+        el.classList.add(_f.class)
+        return el
+      }
+      if(_f.type === "checkbox"){
+        const el = _folderCheckbox.cloneNode(true)
+        el.classList.add(_f.class)
+
+        const _id = `cId-${Math.round(Math.random()*100)}`
+
+        const _inp = el.getElementsByTagName("input")[0]
+        _inp.id = _id
+        _inp.check = _f.default
+        _inp.name = _f.value
+
+        const _lbe = el.getElementsByTagName("label")[0]
+        _lbe.htmlFor = _id
+        _lbe.innerText = _f.titel
+         
+        return el
+      }
+
+      tree.push(id)
+      const len = tree.length -1
+      const el = _folder.cloneNode(true)
+
+      el.style.background = _f.color
+      const _text = el.querySelector(".folder-tile>p")
+      _text.innerText = _f.tile
+
+      _f.child.forEach((child)=>{
+        el.appendChild(folderLoop(child, len))
+      })
+
+      return el
+    }
+
+
+    const _root = folderLoop("root", -1)
+    _root.classList.add("root-menu")
+
+    this.tree = tree
+
+    document.getElementsByTagName("body")[0].appendChild(_root)
+
+  }
 }
 
 const mainSystem = new cubemode()
 window.System = mainSystem
+
+
+
+const root = {
+  "root": {
+    "type": "folder",
+    "tile": "メニュー",
+    "child": ["color-set", "explanation", "fullscreen"],
+    "color": "hsl(0, 30%, 60%)"
+  },
+  "color-set": {
+    "type": "folder",
+    "tile": "色入力",
+    "child": ["color-set-button"],
+    "color": "hsl(100, 30%, 60%)"
+  },
+  "explanation": {
+    "type": "folder",
+    "tile": "解説",
+    "child": [
+      "calculation-set-buttont", "spped-meter", "hand-opacity-meter", "sequential-play-checkbox",
+      "cube-color-checbox"
+    ],
+    "color": "hsl(200, 30%, 60%)"
+  },
+  "spped-meter": {
+    "type": "folder",
+    "tile": "再生速度",
+    "child": ["spped-M"],
+    "color": "hsl(300, 30%, 60%)"
+  },
+  "hand-opacity-meter": {
+    "type": "folder",
+    "tile": "手-透明度",
+    "child": ["hand-M"],
+    "color": "hsl(40, 30%, 60%)"
+  },
+  "fullscreen": {
+    "type": "folder",
+    "tile": "画面サイズ",
+    "child": ["fullscreen-buttont"],
+    "color": "hsl(140, 30%, 60%)"
+  },
+  "color-set-button": {
+    "type": "button",
+    "class": "function-color-set-buttont"
+  },
+  "calculation-set-buttont": {
+    "type": "button",
+    "class": "function-calculation-set-buttont"
+  },
+  "fullscreen-buttont": {
+    "type": "button",
+    "class": "function-fullscreen-buttont"
+  },
+  "spped-M": {
+    "type": "meter",
+    "class": "spped-meter"
+  },
+  "hand-M": {
+    "type": "meter",
+    "class": "hand-opacity-meter"
+  },
+  "sequential-play-checkbox": {
+    "type": "checkbox",
+    "class": "sequential-play-checkbox",
+    "value": "sequential-play",
+    "titel": "連続再生",
+    "default": false,
+    "color": "hsl(240, 30%, 60%)"
+  },
+  "cube-color-checbox": {
+    "type": "checkbox",
+    "class": "cube-color-checkbox",
+    "value": "cube-color",
+    "titel": "情報量軽減",
+    "default": false,
+    "color": "hsl(340, 30%, 60%)"
+  }
+}

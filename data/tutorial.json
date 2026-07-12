@@ -1,6 +1,6 @@
 {
-  "tutorials": [
-    {
+  "tutorials": {
+    "0": {
       "toEvents" : [0],
       "anno": {
         "id": "first-explanation",
@@ -15,125 +15,156 @@
             "h": 0.5
           }
         },
-        "width": 500,
-        "height": 300,
-        "text": "ルービックキューブ学習支援ソフトウェア\nルービックキューブの揃え方を理解しよう"
+        "width": "90vw",
+        "height": "50vh",
+        "maxWidth": "500px",
+        "text": [
+          "3Dルービックキューブ学習支援アプリへようこそ！",
+          "",
+          "　このアプリは、ルービックキューブを一度も揃えたことがない初心者の方でも、基本から楽しく学べるWebアプリケーションです。",
+          "",
+          "　本や動画と違って、「あなたがいま手元に持っているキューブの色の並び」に合わせた、あなただけの解法手順（LBL法）を3Dアニメーションで分かりやすく解説します！",
+          "",
+          "　まずは画面の3Dキューブを動かしてみて、アプリの操作に慣れてみましょう！"
+        ]
       }
     },
-    {
+    "1": {
       "toEvents" : [1],
       "anno": {
         "id": "cube-rotation",
         "pos": {
           "parentElement": "#main-canvas",
           "parentPos": {
-            "w": 0.7,
-            "h": 0.9
+            "w": 1,
+            "h": 1
           },
           "myPos": {
-            "w": 0,
-            "h": 0
+            "w": 1,
+            "h": 1
+          },
+          "dist": {
+            "w": "-50px",
+            "h": "-50px"
           }
         },
-        "width": 300,
-        "height": 150,
-        "text": "1. キューブを掴んで回してみよう",
+        "width": "15mj",
+        "height": "2hmj",
+        "text": "キューブの面をマウスで掴んで回してみよう",
         "line": {
           "endElement": "#main-canvas",
+          "frmae": true,
           "endPos": {
             "w": 0.5,
             "h": 0.5
           },
           "startPos": {
-            "w": 0.4,
+            "w": 0.8,
             "h": 0
           },
           "headType": "circlehead"
         }
       }
     },
-    {
+    "2": {
       "toEvents" : [2],
       "anno": {
         "id": "view-rotation",
         "pos": {
           "parentElement": "#main-canvas",
           "parentPos": {
-            "w": 0.2,
-            "h": 1.1
+            "w": 0.5,
+            "h": 1
           },
           "myPos": {
+            "w": 0.5,
+            "h": 1
+          },
+          "dist": {
             "w": 0,
-            "h": 0
+            "h": "-40px"
           }
         },
-        "width": 300,
-        "height": 150,
-        "text": "2. 背景の黒い場所を掴んで回してみよう",
+        "width": "15mj",
+        "height": "2hmj",
+        "text": "キューブ周辺の背景を掴んで視点を動かしてみましょう。",
         "line": {
           "endElement": "#main-canvas",
+          "frmae": true,
           "endPos": {
-            "w": 0.9,
+            "w": 0.8,
             "h": 0.6
           },
           "startPos": {
             "w": 1,
-            "h": 0.2
+            "h": 0.5
           },
           "headType": "circlehead"
         }
       }
     },
-    {
+    "3": {
       "toEvents" : [3],
       "anno": {
         "id": "wheel",
         "pos": {
           "parentElement": "#main-canvas",
           "parentPos": {
-            "w": 0.2,
-            "h": 1.1
+            "w": 0.5,
+            "h": 1
           },
           "myPos": {
+            "w": 0.5,
+            "h": 1
+          },
+          "dist": {
             "w": 0,
-            "h": 0
+            "h": "-40px"
           }
         },
-        "width": 300,
-        "height": 150,
-        "text": "3. キューブの上でマウスのホイールを回してみよう",
+        "width": "15mj",
+        "height": "2hmj",
+        "text": "マウスホイールを回すと、ズームイン・ズームアウトができます。",
         "line": {
           "endElement": "#main-canvas",
+          "frmae": true,
           "endPos": {
-            "w": 0.9,
+            "w": 0.8,
             "h": 0.6
           },
           "startPos": {
-            "w": 1,
-            "h": 0.2
+            "w": 0.5,
+            "h": 0
           },
           "headType": "circlehead"
         }
       }
     },
-    {
+    "4": {
       "toEvents" : [4, 5],
       "anno": {
         "id": "color-set",
         "pos": {
           "parentElement": ".function-color-set-buttont",
           "parentPos": {
-            "w": -1,
+            "w": 0,
             "h": 1
           },
           "myPos": {
             "w": 1,
             "h": 0
+          },
+          "dist": {
+            "w": "-24px",
+            "h": "24px"
           }
         },
-        "width": 300,
-        "height": 150,
-        "text": "4. 色入力機能を使ってみよう",
+        "width": "15mj",
+        "height": "5hmj",
+        "text": [
+          "あなたの手元にあるキューブの状態を再現できる「色入力機能」を使ってみますか？",
+          "途中で「色入力機能」の使用をやめることもできます。"
+        ],
         "line": {
           "endElement": ".function-color-set-buttont",
           "endPos": {
@@ -148,39 +179,40 @@
         }
       }
     },
-    {
+    "5": {
       "toEvents" : [6],
       "anno": {
         "id": "color-select",
         "pos": {
           "parentElement": "#color-menu",
           "parentPos": {
-            "w": 0.6,
-            "h": 1.5
+            "w": 1,
+            "h": 0
           },
           "myPos": {
-            "w": 0,
-            "h": 0
+            "w": 0.5,
+            "h": 1.5
           }
         },
-        "width": 300,
-        "height": 150,
-        "text": "5. 入力する色を選ぶ",
+        "width": "15mj",
+        "height": "2hmj",
+        "text": "パレットから、入力したい色を1色選んでください。",
         "line": {
           "endElement": "#color-menu",
+          "frmae": true,
           "endPos": {
-            "w": 0.3,
-            "h": 1
+            "w": 1,
+            "h": 0.5
           },
           "startPos": {
-            "w": 0,
-            "h": 0.5
+            "w": 0.8,
+            "h": 1
           },
           "headType": "arrowhead"
         }
       }
     },
-    {
+    "6": {
       "toEvents" : [7],
       "anno": {
         "id": "color-paint",
@@ -188,18 +220,19 @@
           "parentElement": "#color-menu",
           "parentPos": {
             "w": 1,
-            "h": 1.5
+            "h": 0
           },
           "myPos": {
             "w": 0.5,
-            "h": 0
+            "h": 1.5
           }
         },
-        "width": 300,
-        "height": 150,
-        "text": "7. キューブの面をクリックする",
+        "width": "15mj",
+        "height": "2hmj",
+        "text": "色を割り当てたいキューブの面をクリックしてみましょう。",
         "line": {
           "endElement": "#main-canvas",
+          "frmae": true,
           "endPos": {
             "w": 0.5,
             "h": 0.5
@@ -212,24 +245,31 @@
         }
       }
     },
-    {
+    "7": {
       "toEvents" : [8, 9, 10],
       "anno": {
         "id": "color-set-break",
         "pos": {
-          "parentElement": "#main-canvas",
+          "parentElement": ".function-color-set-buttont",
           "parentPos": {
-            "w": 1,
+            "w": 0,
             "h": 1
           },
           "myPos": {
-            "w": 0.5,
-            "h": -0.1
+            "w": 1,
+            "h": 0
+          },
+          "dist": {
+            "w": "-24px",
+            "h": "24px"
           }
         },
-        "width": 300,
-        "height": 150,
-        "text": "8. このまますべての面に色を入力すると自由に回せるようになる\n途中でやめるときは色入力のボタンを押すことで終了できる",
+        "width": "15mj",
+        "height": "4hmj",
+        "text": [
+          "すべての面を入力すると、その状態から自由に動かせるようになります。",
+          "途中でやめるときは色入力のボタンを押すことで終了できます。"
+        ],
         "line": {
           "endElement": ".function-color-set-buttont",
           "endPos": {
@@ -244,24 +284,31 @@
         }
       }
     },
-    {
+    "8": {
       "toEvents" : [11],
       "anno": {
         "id": "calculation-function",
         "pos": {
-          "parentElement": "#main-canvas",
+          "parentElement": ".function-calculation-set-buttont",
           "parentPos": {
-            "w": 1,
+            "w": 0,
             "h": 1
           },
           "myPos": {
-            "w": 1.2,
-            "h": 1.1
+            "w": 1,
+            "h": 0
+          },
+          "dist": {
+            "w": "-24px",
+            "h": "24px"
           }
         },
-        "width": 300,
-        "height": 150,
-        "text": "9. 解説機能をつかっていみる",
+        "width": "15mj",
+        "height": "6hmj",
+        "text": [
+          "ここからは、キューブの揃え方をナビゲートする「解説機能」の使い方を説明します。",
+          "もしも、キューブがあまり崩れていなければ、よく混ぜておきましょう。"
+        ],
         "line": {
           "endElement": ".function-calculation-set-buttont",
           "endPos": {
@@ -276,10 +323,479 @@
         }
       }
     },
-    {
-      "toEvents" : [12,13],
+    "9": {
+      "toEvents" : [12, 13, 14],
       "anno": {
         "id": "loading",
+        "pos": {
+          "parentElement": "#annotation-svg",
+          "parentPos": {
+            "w": 0.5,
+            "h": 1
+          },
+          "myPos": {
+            "w": 0.5,
+            "h": 1
+          },
+          "dist": {
+            "w": 0,
+            "h": "-40px"
+          }
+        },
+        "width": "20mj",
+        "height": "4hmj",
+        "text": [
+          "解説に必要な情報をサーバーから読み込んでいます。",
+          "読み込みが終わるまで、少しの間お待ちください。"
+        ]
+      }
+    },
+    "10": {
+      "toEvents" : [16],
+      "anno": {
+        "id": "step-lists",
+        "pos": {
+          "parentElement": ".step-lists",
+          "parentPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "myPos": {
+            "w": 1,
+            "h": 1
+          },
+          "dist": {
+            "w": "-24px",
+            "h": "-24px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "本アプリでは、初心者にも分かりやすい「LBL法（ルービックキューブを一層ずつ揃える方法）」をベースに、7つのステップで解説します。",
+        "line": {
+          "endElement": ".step-lists",
+          "notObstructview": true,
+          "frmae": true,
+          "endPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.6,
+            "h": 1
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "11": {
+      "toEvents" : [17],
+      "anno": {
+        "id": "sulves-map",
+        "pos": {
+          "parentElement": ".sulves-map",
+          "parentPos": {
+            "w": 0,
+            "h": 0
+          },
+          "myPos": {
+            "w": 0,
+            "h": 1
+          },
+          "dist": {
+            "w": "30px",
+            "h": "-30px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "画面下のこのエリアに、解説アニメーションをコントロールする機能が集まっています。",
+        "line": {
+          "endElement": ".sulves-map",
+          "frmae": true,
+          "endPos": {
+            "w": 0.6,
+            "h": 0
+          },
+          "startPos": {
+            "w": 1,
+            "h": 0.5
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "12": {
+      "toEvents" : [18],
+      "anno": {
+        "id": "play-button",
+        "pos": {
+          "parentElement": ".sulves-buttons",
+          "parentPos": {
+            "w": 1,
+            "h": 0
+          },
+          "myPos": {
+            "w": 0,
+            "h": 1
+          },
+          "dist": {
+            "w": "30px",
+            "h": "-30px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "このボタンをクリックすると、アニメーションの再生・一時停止ができます。",
+        "line": {
+          "endElement": ".play-div",
+          "frmae": true,
+          "endPos": {
+            "w": 1,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.4,
+            "h": 1
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "121": {
+      "toEvents" : [27],
+      "anno": {
+        "id": "aniam-disp",
+        "pos": {
+          "parentElement": "#main-canvas",
+          "parentPos": {
+            "w": 0.5,
+            "h": 1
+          },
+          "myPos": {
+            "w": 0,
+            "h": 0
+          },
+          "dist": {
+            "w": "24px",
+            "h": "24px"
+          }
+        },
+        "width": "15mj",
+        "height": "2hmj",
+        "text": "ここで解説アニメーションが再生されます。",
+        "line": {
+          "endElement": "#main-canvas",
+          "frmae": true,
+          "endPos": {
+            "w": 0.8,
+            "h": 0.9
+          },
+          "startPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "headType": "circlehead"
+        }
+      }
+    },
+    "13": {
+      "toEvents" : [19],
+      "anno": {
+        "id": "player-meter",
+        "pos": {
+          "parentElement": ".step-meter",
+          "parentPos": {
+            "w": 1,
+            "h": 0
+          },
+          "myPos": {
+            "w": 0.5,
+            "h": 1
+          },
+          "dist": {
+            "w": 0,
+            "h": "-50px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "このシークバー（メーター）を動かすことで、好きなシーンへ巻き戻し・早送りができます。",
+        "line": {
+          "endElement": ".step-meter",
+          "frmae": true,
+          "endPos": {
+            "w": 0.4,
+            "h": 0
+          },
+          "startPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "14": {
+      "toEvents" : [20],
+      "anno": {
+        "id": "step-solve-list",
+        "pos": {
+          "parentElement": ".list",
+          "parentPos": {
+            "w": 1,
+            "h": 0
+          },
+          "myPos": {
+            "w": 1,
+            "h": 1
+          },
+          "dist": {
+            "w": "50px",
+            "h": "-50px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "ここでは、現在のアニメーションに対応した「回転記号」が表示されます。動きに合わせてハイライトされます。",
+        "line": {
+          "endElement": ".list",
+          "frmae": true,
+          "endPos": {
+            "w": 0.4,
+            "h": 0
+          },
+          "startPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "15": {
+      "toEvents" : [21],
+      "anno": {
+        "id": "step-change-button",
+        "pos": {
+          "parentElement": ".sulves-buttons",
+          "parentPos": {
+            "w": 1,
+            "h": 0
+          },
+          "myPos": {
+            "w": 0,
+            "h": 1
+          },
+          "dist": {
+            "w": "50px",
+            "h": "-50px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "矢印ボタンを押すと、前後のステップへ移動できます",
+        "line": {
+          "endElement": ".next-div",
+          "frmae": true,
+          "endPos": {
+            "w": 1,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.6,
+            "h": 1
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "16": {
+      "toEvents" : [22, 26],
+      "anno": {
+        "id": "step-lists",
+        "pos": {
+          "parentElement": ".step-lists",
+          "parentPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "myPos": {
+            "w": 1,
+            "h": 1
+          },
+          "dist": {
+            "w": "-50px",
+            "h": "-50px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "ステップ一覧リストから、解説を読みたいステップへ直接ジャンプすることもできます。",
+        "line": {
+          "endElement": ".step-lists",
+          "notObstructview": true,
+          "frmae": true,
+          "endPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.5,
+            "h": 1
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "17": {
+      "toEvents" : [23],
+      "anno": {
+        "id": "spped-meter",
+        "pos": {
+          "parentElement": ".spped-meter",
+          "parentPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "myPos": {
+            "w": 1,
+            "h": 0
+          },
+          "dist": {
+            "w": "-50px",
+            "h": "50px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "アニメーションの再生スピードを、好みの速さに変更できます。",
+        "line": {
+          "endElement": ".spped-meter",
+          "endPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.5,
+            "h": 0
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "18": {
+      "toEvents" : [24],
+      "anno": {
+        "id": "hand-opacity-meter",
+        "pos": {
+          "parentElement": ".hand-opacity-meter",
+          "parentPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "myPos": {
+            "w": 1,
+            "h": 0
+          },
+          "dist": {
+            "w": "-50px",
+            "h": "50px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "キューブを回す「手のモデル」の透明度を調整できます。",
+        "line": {
+          "endElement": ".hand-opacity-meter",
+          "endPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.5,
+            "h": 0
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "19": {
+      "toEvents" : [25],
+      "anno": {
+        "id": "sequential-play-checkbox",
+        "pos": {
+          "parentElement": ".sequential-play-checkbox",
+          "parentPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "myPos": {
+            "w": 1,
+            "h": 0
+          },
+          "dist": {
+            "w": "-50px",
+            "h": "50px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "現在のステップが終了した後、再生ボタンを押すとスムーズに次のステップの再生が始まるようになります。",
+        "line": {
+          "endElement": ".sequential-play-checkbox",
+          "endPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.5,
+            "h": 0
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "20": {
+      "toEvents" : [28],
+      "anno": {
+        "id": "cube-color-checkbox",
+        "pos": {
+          "parentElement": ".cube-color-checkbox",
+          "parentPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "myPos": {
+            "w": 1,
+            "h": 0
+          },
+          "dist": {
+            "w": "-50px",
+            "h": "50px"
+          }
+        },
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "解法の理解に必要のないパーつの色を暗くして、情報量を減らします。",
+        "line": {
+          "endElement": ".cube-color-checkbox",
+          "endPos": {
+            "w": 0,
+            "h": 0.5
+          },
+          "startPos": {
+            "w": 0.5,
+            "h": 0
+          },
+          "headType": "arrowhead"
+        }
+      }
+    },
+    "100": {
+      "toEvents" : [15],
+      "anno": {
+        "id": "error",
         "pos": {
           "parentElement": "#annotation-svg",
           "parentPos": {
@@ -291,85 +807,186 @@
             "h": 1.3
           }
         },
-        "width": 300,
-        "height": 150,
-        "text": "9. 解説機能をつかっていみる"
+        "width": "15mj",
+        "height": "3hmj",
+        "text": "エラー: サーバーとのやり取りが失敗しました。<br>解説機能への移行を中断しました。"
       }
     }
-  ],
+  },
   "events": [
     {
       "type": "annotation click",
-      "nextTutorialId": 1
+      "nextTutorialId": 1,
+      "explanation": "初回の説明"
     },
     {
       "type": "user action",
       "name": "cube-rotation",
       "nextTutorialId": 2,
-      "count": 2
+      "count": 2,
+      "explanation": "キューブ表示エリアでのキューブの回転操作"
     },
     {
       "type": "user action",
       "name": "view-rotation",
       "nextTutorialId": 3,
-      "count": 2
+      "count": 2,
+      "explanation": "キューブ表示エリアでの視点の操作"
     },
     {
       "type": "user action",
       "name": "wheel",
       "nextTutorialId": 4,
-      "count": 2
+      "count": 2,
+      "explanation": "キューブ表示エリアでのズーム"
     },
     {
       "type": "function click",
       "name": "color-set",
-      "nextTutorialId": 5
+      "nextTutorialId": 5,
+      "explanation": "色入力機能の使用"
     },
     {
       "type": "annotation click",
-      "nextTutorialId": 8
+      "nextTutorialId": 8,
+      "text": "スキップ",
+      "explanation": "色入力機能の説明をスキップ"
     },
     {
       "type": "user action",
       "name": "color-select",
       "nextTutorialId": 6,
-      "count": 1
+      "count": 1,
+      "explanation": "色の選択"
     },
     {
       "type": "user action",
       "name": "color-paint",
       "nextTutorialId": 7,
-      "count": 1
+      "count": 1,
+      "explanation": "キューブの面の選択"
     },
     {
       "type": "annotation click",
-      "nextTutorialId": null
+      "nextTutorialId": null,
+      "text": "このまま続ける",
+      "explanation": "色入力を続ける"
     },
     {
       "type": "function click",
       "name": "color-set-break",
-      "nextTutorialId": 8
+      "nextTutorialId": 8,
+      "explanation": "色入力の中断"
     },
     {
       "type": "user action",
       "name": "color-set-completion",
       "nextTutorialId": 8,
-      "count": 1
+      "count": 1,
+      "explanation": "色入力の完了"
     },
     {
       "type": "function click",
       "name": "calculation",
-      "nextTutorialId": 9
+      "nextTutorialId": 9,
+      "explanation": "解説機能の使用"
     },
     {
       "type": "annotation click",
-      "nextTutorialId": null
+      "nextTutorialId": null,
+      "explanation": "通信待ち時間"
     },
     {
       "type": "user action",
       "name": "calculation-response-completion",
       "nextTutorialId": 10,
-      "count": 1
+      "count": 1,
+      "explanation": "サーバーから正常な返答"
+    },
+    {
+      "type": "user action",
+      "name": "calculation-response-interruption",
+      "nextTutorialId": 100,
+      "count": 1,
+      "explanation": "サーバーとの通信にエラーが起きた"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": "end",
+      "explanation": "サーバーとの通信にエラーを了解する"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 11,
+      "explanation": "ステップリストの説明"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 12,
+      "explanation": "解説アニメーションの説明"
+    },
+    {
+      "type": "user action",
+      "name": "playback-button",
+      "nextTutorialId": 121,
+      "count": 1,
+      "explanation": "再生機能が使用される"
+    },
+    {
+      "type": "user action",
+      "name": "meter-use",
+      "nextTutorialId": 15,
+      "count": 1,
+      "explanation": "メーターが操作される"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 13,
+      "explanation": "回転記号の説明"
+    },
+    {
+      "type": "user action",
+      "name": "step-change-button",
+      "nextTutorialId": 16,
+      "count": 1,
+      "explanation": "ステップの移動を行う"
+    },
+    {
+      "type": "user action",
+      "name": "step-lists",
+      "nextTutorialId": 17,
+      "count": 1,
+      "explanation": "ステップの移動を行う"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 18,
+      "explanation": "キューブのアニメーションのスピード"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 19,
+      "explanation": "手のモデルの透明度の変更"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 20,
+      "explanation": "連続再生"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 17,
+      "explanation": "ステップリストの変更"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 14,
+      "explanation": "解説アニメーションの再生"
+    },
+    {
+      "type": "annotation click",
+      "nextTutorialId": 21,
+      "explanation": "情報量軽減"
     }
   ]
 }

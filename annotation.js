@@ -1,6 +1,9 @@
 const svgNS = "http://www.w3.org/2000/svg";
 const xmlNS = "http://www.w3.org/1999/xhtml";
 
+let fontSize = 16
+let anno_button_height = 32
+
 export class AnnotationManager {
   constructor(svg, camera, containerWidth, containerHeight) {
     this.activeAnnotations = new Map();
@@ -40,7 +43,7 @@ export class AnnotationManager {
 
     const body = document.createElementNS(xmlNS, "div")
     body.classList.add("ano-body")
-    body.innerHTML = `あいうえおかきくけこさしすせそたちつてと\nあいうえおかきくけこさしすせそたちつてと\nあいうえおかきくけこさしすせそたちつてと`
+    body.innerHTML = ``
 
     fObj.appendChild(body)
     
@@ -68,6 +71,9 @@ export class AnnotationManager {
 
     this.nowLoadingElement = null
     this.loadingIconMake()
+  }
+  nowAnno(){
+    return Array.from(System.AnnotationManager.activeAnnotations)
   }
   loadingIconMake(){
     
@@ -130,7 +136,7 @@ export class AnnotationManager {
 
     moveLine.setAttribute('d', `M ${_t} Z`)
 
-    const sumLength = R * 6
+    const sumLength = R * 3
     moveLine.style.strokeDasharray = `${R} ${sumLength - R}`;
 
     ghexagon.appendChild(moveLine)
@@ -141,7 +147,7 @@ export class AnnotationManager {
         { strokeDashoffset: -sumLength }
       ],
       move: {
-        duration: 3000,
+        duration: 2000,
         iterations: Infinity,
         easing: 'linear'
       }
@@ -305,17 +311,27 @@ export class AnnotationManager {
 
 export class SVGAnnotation {
   constructor(data) {
-    const {svg, id, pos, width, height, text, eventName, button, sourceSet, line} = data
+    const {svg, id, pos, width, height, text, eventName, button, button_text, sourceSet, line} = data
     this.svg = svg
     this.id = id
     this.pos = pos
+    this.pos.dist = this.pos.dist || {
+      "w": 0,
+      "h": 0
+    }
+
     this.width = width
     this.height = height
-    this.text = text
+    this.maxWidth = data.maxWidth || 0
+    this.maxHeight = data.maxHeight || 0
+    
+    this.text = (typeof text) === "string" ? text : text.join("<br>")
+    console.log(this.text)
     this.line = line || null
 
     this.eventName = eventName
     this.button = button
+    this.button_text = button_text
     this.sourceSet = sourceSet
 
     this.x = null
@@ -328,11 +344,20 @@ export class SVGAnnotation {
     this.a_frame = sourceSet.querySelector('.ano-frame');
 
     this.a_fObj = sourceSet.querySelector('.ano-fObj')
-    this.a_fObj.setAttribute("width", `${width}`)
-    this.a_fObj.setAttribute("height", `${height}`)
+
+    this.a_parent_frmae = null
+
+
+    const _framePos = {
+      w: this._viewportToPx(this.width),
+      h: this._viewportToPx(this.height),
+    }
+
+    this.a_fObj.setAttribute("width", `${_framePos.w}`)
+    this.a_fObj.setAttribute("height", `${_framePos.h}`)
 
     this.a_body = sourceSet.querySelector('.ano-body')
-    this.a_body.innerHTML = text
+    this.a_body.innerHTML = this.text
     
     this.a_line = sourceSet.querySelector('.ano-line')
 
@@ -341,6 +366,16 @@ export class SVGAnnotation {
 
     if(this.line !== null){
       this.a_line.setAttribute("marker-end", `url(#${this.line.headType})`)
+
+      // if(this.line.frmae !== undefined && this.line.frmae){
+
+        const _f = document.createElementNS(svgNS, "rect") 
+        _f.classList.add("ano-parent-frmae")
+
+        this.a_parent_frmae = _f
+
+        this.sourceSet.insertBefore(this.a_parent_frmae, this.sourceSet.firstChild)
+      // }
     }
 
 
@@ -349,6 +384,7 @@ export class SVGAnnotation {
     if(button){
       const el = this.sourceSet.querySelector(".ano-btton")
       el.style.display = "block"
+      el.innerText = button_text
       el.addEventListener("click", (e)=>{
         const event = new CustomEvent("tutorial", {
           detail: {
@@ -388,46 +424,123 @@ export class SVGAnnotation {
     //   })
     // }
   }
+  static viewportToPx(svg, viewportStr) {
+    if(typeof viewportStr === "number") return viewportStr
+    // 正規表現で「数字部分」と「単位部分」に分離する
+    const match = viewportStr.match(/^([0-9.]+)(vw|vh|px|min|max)$/);
+    if (!match) return 0;
+
+    console.log({match, len: match.length})
+
+    const value = parseFloat(match[1]); // "70" -> 70
+    const unit = match[2];              // "vh"
+
+    if(unit === "px") return value
+
+    const svgs = {
+      w: svg.clientWidth,
+      h: svg.clientHeight
+    }
+
+    const one = function e(){
+      if(unit === "vw") return svgs.w
+      if(unit === "vh") return svgs.h
+
+      if(unit === "min") return Math.min(svgs.w, svgs.h)
+      if(unit === "max") return Math.max(svgs.w, svgs.h)
+    } 
+
+    return one() * value / 100
+  }
+  _viewportToPx(viewportStr) {
+    if(typeof viewportStr === "number") return viewportStr
+    // 正規表現で「数字部分」と「単位部分」に分離する
+    const match = viewportStr.match(/^([-?0-9.]+)(vw|vh|px|min|max|mj|hmj)$/);
+    if (!match) return 0;
+
+    // console.log({match, len: match.length})
+
+    const value = parseFloat(match[1]); // "70" -> 70
+    const unit = match[2];              // "vh"
+
+    if(unit === "px") return value
+    if(unit === "mj") return fontSize * value + 20
+    if(unit === "hmj"){
+      if(this.button) return fontSize * value * 1.5 + 20 + anno_button_height
+      return fontSize * value * 1.5 + 20
+    }
+
+    const svgs = {
+      w: this.svg.clientWidth,
+      h: this.svg.clientHeight
+    }
+
+    const one = function e(){
+      if(unit === "vw") return svgs.w
+      if(unit === "vh") return svgs.h
+
+      if(unit === "min") return Math.min(svgs.w, svgs.h)
+      if(unit === "max") return Math.max(svgs.w, svgs.h)
+    } 
+
+    return one() * value / 100
+  }
   _annotationLineUpdata(){
-      // pos: {
-      //   parentElement: "#main-canvas",
-      //   parentPos: {
-      //     w: 0.7,
-      //     h: 0.6
-      //   },
-      //   myPos: {
-      //     w: 0,
-      //     h: 0
-      //   }
-      // },
-      // line: {
-      //   endElement: "#main-canvas",
-      //   endPos: {
-      //     w: 0.5,
-      //     h: 0.5
-      //   },
-      //   startPos: {
-      //     w: 0,
-      //     h: 0.3
-      //   },
-      // }
-      
+    const svgs = {
+      w: this.svg.clientWidth,
+      h: this.svg.clientHeight
+    }
+
     const _p = document.querySelector(this.pos.parentElement).getBoundingClientRect()
     const _bubblePos = {
       x: _p.width * this.pos.parentPos.w + _p.left,
       y: _p.height * this.pos.parentPos.h + _p.top
     }
-    _bubblePos.x -= this.width * this.pos.myPos.w
-    _bubblePos.y -= this.height * this.pos.myPos.h
 
-    this.x = _bubblePos.x
-    this.y = _bubblePos.y
+    const _framePos = {
+      w: this._viewportToPx(this.width),
+      h: this._viewportToPx(this.height)
+    }
+
+    _framePos.w = Math.min(_framePos.w, svgs.w-20)
+    _framePos.h = Math.min(_framePos.h, svgs.h-20)
+
+
+    if(this.maxWidth){
+      _framePos.w = Math.min(_framePos.w, this._viewportToPx(this.maxWidth))
+    }
+    if(this.maxHeight){
+      _framePos.h = Math.min(_framePos.h, this._viewportToPx(this.maxHeight))
+    }
+
+    const _dist = {
+      w: this._viewportToPx(this.pos.dist.w),
+      h: this._viewportToPx(this.pos.dist.h)
+    }
+
+    _bubblePos.x -= _framePos.w * this.pos.myPos.w
+    _bubblePos.y -= _framePos.h * this.pos.myPos.h
+    
+    _bubblePos.x += _dist.w
+    _bubblePos.y += _dist.h
+
+
+    if(_bubblePos.x < 10)  _bubblePos.x = 10
+    if(_bubblePos.y < 10)  _bubblePos.y = 10
+    if(svgs.w-_framePos.w-10 < _bubblePos.x) _bubblePos.x = svgs.w-_framePos.w-10
+    if(svgs.h-_framePos.h-10 < _bubblePos.y) _bubblePos.y = svgs.h-_framePos.h-10
 
     this.a_bubble.setAttribute("transform",
       `translate(${_bubblePos.x}, ${_bubblePos.y})`)
 
-    const _t = `0 0, ${this.width} 0, ${this.width} ${this.height}, 0 ${this.height}`
+    this.x = _bubblePos.x
+    this.y = _bubblePos.y
+
+    const _t = `0 0, ${_framePos.w} 0, ${_framePos.w} ${_framePos.h}, 0 ${_framePos.h}`
     this.a_frame.setAttribute("points", `${_t}`)
+    
+    this.a_fObj.setAttribute("width", `${_framePos.w}`)
+    this.a_fObj.setAttribute("height", `${_framePos.h}`)
 
     if(this.line === null)  return 
 
@@ -438,8 +551,8 @@ export class SVGAnnotation {
     }
 
     const _lineStart = {
-      x: this.width * this.line.startPos.w + this.x,
-      y: this.height * this.line.startPos.h + this.y
+      x: _framePos.w * this.line.startPos.w + this.x,
+      y: _framePos.h * this.line.startPos.h + this.y
     }
 
     const __t = [
@@ -458,6 +571,13 @@ export class SVGAnnotation {
   
 
     this.a_line.setAttribute("points", `${__t.map((e)=>e.join(",")).join(" ")}`)
+
+    if(this.a_parent_frmae != null){
+      this.a_parent_frmae.setAttribute("x", _endPos.x)
+      this.a_parent_frmae.setAttribute("y", _endPos.y)
+      this.a_parent_frmae.setAttribute("width", _endPos.width)
+      this.a_parent_frmae.setAttribute("height", _endPos.height)
+    }
   }
   updateLeaderLine(startX, startY, endX, endY) {
     const data = [
