@@ -22,7 +22,8 @@ import {
   cubeset, wait,
   objectPrint, positionGet, modelIndex
 } from './solve.js'
-// import { vec2 } from 'three/src/nodes/tsl/TSLCore.js'
+
+import sampleTestData from './data/sample1.json' with { type: 'json' }
 
 const svgNS = "http://www.w3.org/2000/svg"
 const xmlns= "http://www.w3.org/1999/xhtml"
@@ -939,7 +940,8 @@ class cubemode{
       const time = Date.now();
 
       const response = await fetch(
-        'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010',
+        // 'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010',
+        'http://192.168.188.193:7071/api/CubeSovleFunction010',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -976,25 +978,35 @@ class cubemode{
 
       const currentCount = await this.db.guids.count()
 
-      if(currentCount == 0){
-        console.log(`解説データのsave 無し`)
-        return false
+      if(currentCount != 0){
+        
+        const cachedRecord = await this.db.guids.get(1)
+
+        if (cachedRecord) {
+          const {data} = cachedRecord
+
+          this.saveCube = this.dispCube.clone()
+          console.log(data.dispCube)
+          await this.timeList.ins(this.dispCube.toJson(), data.res_cd, data.res_sl, data.res_tk, data.amime)
+
+          return true // 4MBのデータをそのまま返す
+        
+        }
       }
 
-      const cachedRecord = await this.db.guids.get(1)
+      console.log(`解説データのsave 無し`)
 
-      if (cachedRecord) {
-        const {data} = cachedRecord
+      console.log(`sampleデータを表示`)
+      const _data = sampleTestData
 
-        this.saveCube = this.dispCube.clone()
-        console.log(data.dispCube)
-        await this.timeList.ins(this.dispCube.toJson(), data.res_cd, data.res_sl, data.res_tk, data.amime)
+      this.saveCube = this.dispCube.clone()
+      console.log(_data.dispCube)
+      await this.timeList.ins(this.dispCube.toJson(), _data.res_cd, _data.res_sl, _data.res_tk, _data.amime)
 
-        return true // 4MBのデータをそのまま返す
+      return true // 4MBのデータをそのまま返す
       
-      }
 
-      return false
+      // return false
     }
 
     return false
