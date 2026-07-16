@@ -940,8 +940,7 @@ class cubemode{
       const time = Date.now();
 
       const response = await fetch(
-        // 'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010',
-        'http://192.168.188.193:7071/api/CubeSovleFunction010',
+        'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
