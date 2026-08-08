@@ -939,8 +939,10 @@ class cubemode{
       const reqData = {ss: this.dispCube.cube, cd: this.dispCube.color.c}
       const time = Date.now();
 
+      console.log(reqData)
+
       const response = await fetch(
-        'https://cubesolvefunction010.azurewebsites.net/api/cubesovlefunction010',
+        "https://func-rubiks-solver-api-hah9fabadfgkfud3.japanwest-01.azurewebsites.net/api/SolveAndAnimate",
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
