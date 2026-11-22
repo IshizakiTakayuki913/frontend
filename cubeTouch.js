@@ -947,7 +947,7 @@ class cubemode{
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(reqData),
-          signal: AbortSignal.timeout(5000) 
+          signal: AbortSignal.timeout(30000) 
         },
       )
     
